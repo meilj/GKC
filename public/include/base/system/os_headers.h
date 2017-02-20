@@ -16,9 +16,9 @@
 
 //OS
 
-#if defined(OS_WINDOWS)
+#if defined(GKC_OS_WINDOWS)
 	#include "Windows/os_headers.h"
-#elif defined(OS_LINUX)
+#elif defined(GKC_OS_LINUX)
 	#include "Linux/os_headers.h"
 #else
 	#error Error OS type!
@@ -27,21 +27,20 @@
 //CRT
 
 #include <stdio.h>
-#include <assert.h>
-#include <stdlib.h>
 #include <malloc.h>
 #include <memory.h>
 
 #include <stdarg.h>
 #include <errno.h>
 
-#if defined(OS_WINDOWS)
+#if defined(GKC_OS_WINDOWS)
 	#include <tchar.h>
 	#include <mbstring.h>
-#elif defined(OS_LINUX)
+#elif defined(GKC_OS_LINUX)
 	#include <wchar.h>
 	#include <ctype.h>
 	#include <wctype.h>
+	#include <iconv.h>
 #else
 	#error Error OS type!
 #endif
@@ -50,9 +49,9 @@
 
 #include <math.h>
 #include <limits.h>
-#if defined(OS_WINDOWS)
+#if defined(GKC_OS_WINDOWS)
 	#include <float.h>
-#elif defined(OS_LINUX)
+#elif defined(GKC_OS_LINUX)
 	#define FLT_EPSILON   __FLT_EPSILON__
 	#define FLT_MIN       __FLT_MIN__
 	#define FLT_MAX       __FLT_MAX__

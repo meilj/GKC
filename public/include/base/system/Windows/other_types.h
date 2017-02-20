@@ -31,21 +31,34 @@ inline bool guid_equal(const guid& id1, const guid& id2) throw()
 	return ::IsEqualGUID(id1, id2) ? true : false;
 }
 
+//constant
+
+// in header file
+#define DECLARE_GUID(name)  \
+	extern "C" const GUID FAR name;
+
+// in cpp file
+#define IMPLEMENT_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8)  \
+	extern "C" const GUID FAR name = { (l), (w1), (w2), { (b1), (b2), (b3), (b4), (b5), (b6), (b7), (b8) } };
+
+// use
+#define USE_GUID(name)  (name)
+
 //------------------------------------------------------------------------------
 //character
 
-typedef CHAR           CharA;  //ANSI or UTF8
-typedef WCHAR          CharH;  //word or UTF16
-typedef unsigned long  CharL;  //long or UTF32
+typedef CHAR           char_a;  //ANSI or UTF8
+typedef WCHAR          char_h;  //word or UTF16
+typedef unsigned long  char_l;  //long or UTF32
 
-typedef CharH  CharS;  //system type, UTF16
+typedef char_h  char_s;  //system type, UTF16
 //for const string
-#define _WIDEN2(x)  L##x
-#define _WIDEN(x)   _WIDEN2(x)
+#define _OS_WIDEN2(x)  L##x
+#define _OS_WIDEN(x)   _OS_WIDEN2(x)
 
-#define _S(x)  _WIDEN(x)
+#define _S(x)  _OS_WIDEN(x)
 
-typedef CharH  CharW;  //for wide type, L"..."
+typedef char_h  char_w;  //for wide type, L"..."
 
 //------------------------------------------------------------------------------
 //atomic
@@ -94,7 +107,9 @@ inline void* mem_move(const void* src, uintptr count, void* dest) throw()
 #define CR_FROM_ERROR(err)  ((HRESULT)(((err) & 0x0000FFFF) | (FACILITY_WIN32 << 16) | 0x80000000))
 
 //------------------------------------------------------------------------------
-//call_result
+//call result
+
+#pragma pack(push, 1)
 
 class call_result
 {
@@ -158,19 +173,29 @@ private:
 	HRESULT m_result;
 };
 
-//------------------------------------------------------------------------------
-// call_result constants
+#pragma pack(pop)
 
-#define CR_S_EOF             ERROR_HANDLE_EOF
-#define CR_S_FALSE           1
-#define CR_OK                0
+//------------------------------------------------------------------------------
+// call result constants
+
+#define CR_S_EOF             (ERROR_HANDLE_EOF)
+#define CR_S_FALSE           (1)
+#define CR_OK                (0)
 #define CR_FAIL              E_FAIL
+#define CR_UNEXPECTED        E_UNEXPECTED
 #define CR_OUTOFMEMORY       E_OUTOFMEMORY
+#define CR_BADADDRESS        E_POINTER
 #define CR_OVERFLOW          CR_FROM_ERROR(ERROR_ARITHMETIC_OVERFLOW)
 #define CR_SABAD             CR_FROM_ERROR(ERROR_DLL_INIT_FAILED)
 #define CR_INVALID           E_INVALIDARG
 #define CR_NOTIMPL           E_NOTIMPL
 #define CR_NAMETOOLONG       CO_E_PATHTOOLONG
+#define CR_DISKFULL          CR_FROM_ERROR(ERROR_DISK_FULL)
+#define CR_FDBAD             E_HANDLE
+#define CR_CORRUPT           STG_E_DOCFILECORRUPT
+#define CR_NOACCESS          E_ACCESSDENIED
+#define CR_ABORT             E_ABORT
+#define CR_CANCELED          CR_FROM_ERROR(ERROR_CANCELLED)
 
 //------------------------------------------------------------------------------
 // Service
@@ -183,7 +208,7 @@ private:
 
 // report_service_log
 //  type: SERVICE_LOG_*
-inline void report_service_log(const CharS* szService, uint type, const CharS* szMsg) throw()
+inline void report_service_log(const char_s* szService, uint type, const char_s* szMsg) throw()
 {
 	HANDLE hEventSource = ::RegisterEventSourceW(NULL, szService);
 	if( hEventSource != NULL ) {

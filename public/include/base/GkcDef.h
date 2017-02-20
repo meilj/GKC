@@ -30,7 +30,7 @@ for cross-platform.
 //Machine Type
 #if ( !defined(CM_X86) && !defined(CM_X64) )
 //windows
-#define OS_WINDOWS
+#define GKC_OS_WINDOWS
 //WIN64
 #ifdef _WIN64
 #define WIN64
@@ -40,7 +40,7 @@ for cross-platform.
 #endif //WIN64
 #else
 //linux
-#define OS_LINUX
+#define GKC_OS_LINUX
 #endif //Machine Type
 
 //basic types
@@ -61,9 +61,88 @@ for cross-platform.
 //console APIs
 #include "system/console_api.h"
 
+//file management
+#include "system/fm_api.h"
+
+//------------------------------------------------------------------------------
+//system types which can use exceptions
+
+#include "system/sys_types.h"
+
+#include "system/sys_locale.h"
+
+//------------------------------------------------------------------------------
+
 ////////////////////////////////////////////////////////////////////////////////
 namespace GKC {
 ////////////////////////////////////////////////////////////////////////////////
+
+//------------------------------------------------------------------------------
+// Time
+
+// SystemTime
+typedef system_time  SystemTime;
+
+//------------------------------------------------------------------------------
+// Pointers
+
+// RefPtr<T>
+
+template <typename T>
+using RefPtr = ref_ptr<T>;
+
+// RefPtrHelper
+typedef ref_ptr_helper  RefPtrHelper;
+
+//------------------------------------------------------------------------------
+// Iterator
+
+// ReverseIterator<T>
+template <typename T>
+using ReverseIterator = reverse_iterator<T>;
+
+//------------------------------------------------------------------------------
+// Array
+
+// ArrayPosition
+typedef array_position  ArrayPosition;
+
+// ArrayIterator<T>
+template <typename T>
+using ArrayIterator = array_iterator<T>;
+
+// ConstArray<T>
+template <typename T>
+using ConstArray = const_array<T>;
+
+// ConstArrayHelper
+typedef const_array_helper  ConstArrayHelper;
+
+// FixedArray<T, t_size>
+template <typename T, uintptr t_size>
+using FixedArray = fixed_array<T, t_size>;
+
+// FixedArrayHelper
+typedef fixed_array_helper  FixedArrayHelper;
+
+//------------------------------------------------------------------------------
+// Character
+
+typedef char_a  CharA;
+typedef char_h  CharH;
+typedef char_l  CharL;
+
+typedef char_s  CharS;
+typedef char_w  CharW;
+typedef char_f  CharF;
+
+//------------------------------------------------------------------------------
+// CallResult
+
+typedef call_result  CallResult;
+
+// CallResult constants
+typedef system_call_results  SystemCallResults;
 
 //------------------------------------------------------------------------------
 // Byte Order
@@ -73,121 +152,29 @@ namespace GKC {
 // ByteOrderHelper
 typedef byte_order_helper  ByteOrderHelper;
 
-//------------------------------------------------------------------------------
-// CallResult
+// SeType<T>
+template <typename T>
+using SeType = se_type<T>;
 
-typedef call_result  CallResult;
+// LeType<T>
+template <typename T>
+using LeType = le_type<T>;
 
-// CallResult constants
-
-BEGIN_ENUM(SystemCallResults)
-	ENUM_VALUE_ENTRY(S_EOF, CR_S_EOF)
-	ENUM_VALUE_ENTRY(S_False, CR_S_FALSE)
-	ENUM_VALUE_ENTRY(OK, CR_OK)
-	ENUM_VALUE_ENTRY(Fail, CR_FAIL)
-	ENUM_VALUE_ENTRY(OutOfMemory, CR_OUTOFMEMORY)
-	ENUM_VALUE_ENTRY(Overflow, CR_OVERFLOW)
-	ENUM_VALUE_ENTRY(SABad, CR_SABAD)
-	ENUM_VALUE_ENTRY(Invalid, CR_INVALID)
-	ENUM_VALUE_ENTRY(NotImpl, CR_NOTIMPL)
-	ENUM_VALUE_ENTRY(NameTooLong, CR_NAMETOOLONG)
-END_ENUM()
+// BeType<T>
+template <typename T>
+using BeType = be_type<T>;
 
 //------------------------------------------------------------------------------
 // Exceptions
 
 // Exception
-
-class Exception
-{
-public:
-	Exception() throw()
-	{
-	}
-	explicit Exception(const CallResult& res) throw() : m_result(res)
-	{
-	}
-	Exception(const Exception& src) throw() : m_result(src.m_result)
-	{
-	}
-	~Exception() throw()
-	{
-	}
-
-	//operators
-	Exception& operator=(const Exception& src) throw()
-	{
-		if( &src != this ) {
-			m_result = src.m_result;
-		}
-		return *this;
-	}
-
-	//methods
-	CallResult GetResult() const throw()
-	{
-		return m_result;
-	}
-	void SetResult(const CallResult& res) throw()
-	{
-		m_result = res;
-	}
-
-protected:
-	CallResult m_result;
-};
+typedef exception_base  Exception;
 
 // OutOfMemoryException
-
-class OutOfMemoryException : public Exception
-{
-public:
-	OutOfMemoryException() throw() : Exception(CallResult(SystemCallResults::OutOfMemory))
-	{
-	}
-	OutOfMemoryException(const OutOfMemoryException& src) throw() : Exception(static_cast<const Exception&>(src))
-	{
-	}
-	OutOfMemoryException& operator=(const OutOfMemoryException& src) throw()
-	{
-		Exception::operator=(static_cast<const Exception&>(src));
-		return *this;
-	}
-};
+typedef outofmemory_exception  OutOfMemoryException;
 
 // OverflowException
-
-class OverflowException : public Exception
-{
-public:
-	OverflowException() throw() : Exception(CallResult(SystemCallResults::Overflow))
-	{
-	}
-	OverflowException(const OverflowException& src) throw() : Exception(static_cast<const Exception&>(src))
-	{
-	}
-	OverflowException& operator=(const OverflowException& src) throw()
-	{
-		Exception::operator=(static_cast<const Exception&>(src));
-		return *this;
-	}
-};
-
-//------------------------------------------------------------------------------
-// Time
-
-// SystemTime
-struct SystemTime
-{
-	ushort uYear;
-	ushort uMonth;         //1--12
-	ushort uDayOfWeek;     //0--6, since Sunday
-	ushort uDay;           //1--31
-	ushort uHour;          //0--23
-	ushort uMinute;        //0--59
-	ushort uSecond;        //0--59/60
-	ushort uMilliseconds;  //0--999
-};
+typedef overflow_exception  OverflowException;
 
 //------------------------------------------------------------------------------
 // number
@@ -195,434 +182,60 @@ struct SystemTime
 // Limits<T>
 
 template <typename T>
-class Limits;
-
-//special
-template <>
-class Limits<char>
-{
-public:
-	static const char Lowest = SCHAR_MIN;
-	static const char Min = SCHAR_MIN;
-	static const char Max = SCHAR_MAX;
-};
-template <>
-class Limits<byte>
-{
-public:
-	static const byte Lowest = 0;
-	static const byte Min = 0;
-	static const byte Max = UCHAR_MAX;
-};
-
-template <>
-class Limits<short>
-{
-public:
-	static const short Lowest = SHRT_MIN;
-	static const short Min = SHRT_MIN;
-	static const short Max = SHRT_MAX;
-};
-template <>
-class Limits<ushort>
-{
-public:
-	static const ushort Lowest = 0;
-	static const ushort Min = 0;
-	static const ushort Max = USHRT_MAX;
-};
-
-template <>
-class Limits<int>
-{
-public:
-	static const int Lowest = INT_MIN;
-	static const int Min = INT_MIN;
-	static const int Max = INT_MAX;
-};
-template <>
-class Limits<uint>
-{
-public:
-	static const uint Lowest = 0;
-	static const uint Min = 0;
-	static const uint Max = UINT_MAX;
-};
-
-template <>
-class Limits<int64>
-{
-public:
-	static const int64 Lowest = LLONG_MIN;
-	static const int64 Min = LLONG_MIN;
-	static const int64 Max = LLONG_MAX;
-};
-template <>
-class Limits<uint64>
-{
-public:
-	static const uint64 Lowest = 0;
-	static const uint64 Min = 0;
-	static const uint64 Max = ULLONG_MAX;
-};
-
-template <>
-class Limits<float>
-{
-public:
-	static const float Lowest;
-	static const float Min;
-	static const float Max;
-};
-template <>
-class Limits<double>
-{
-public:
-	static const double Lowest;
-	static const double Min;
-	static const double Max;
-};
+using Limits = limits_base<T>;
 
 //------------------------------------------------------------------------------
 // basic operators
 
 // SafeOperators
-
-class SafeOperators
-{
-public:
-	template <typename T>
-	static CallResult Add(IN const T& left, IN const T& right, OUT T& result) throw()
-	{
-		if( Limits<T>::Max - left < right ) {
-			return CallResult(SystemCallResults::Overflow);
-		}
-		result = left + right;
-		return CallResult(SystemCallResults::OK);
-	}
-
-	template <typename T>
-	static CallResult Multiply(IN const T& left, IN const T& right, OUT T& result) throw()
-	{
-		//avoid divide 0
-		if( left == 0 ) {
-			result = 0;
-			return CallResult(SystemCallResults::OK);
-		}
-		if( Limits<T>::Max / left < right ) {
-			return CallResult(SystemCallResults::Overflow);
-		}
-		result = left * right;
-		return CallResult(SystemCallResults::OK);
-	}
-
-	//throw version
-	template <typename T>
-	static T AddThrow(IN const T& left, IN const T& right)
-	{
-		T result;
-		CallResult cr = Add(left, right, result);
-		if( cr.IsFailed() ) {
-			throw( Exception(cr) );
-		}
-		return result;
-	}
-	template <typename T>
-	static T MultiplyThrow(IN const T& left, IN const T& right)
-	{
-		T result;
-		CallResult cr = Multiply(left, right, result);
-		if( cr.IsFailed() ) {
-			throw( Exception(cr) );
-		}
-		return result;
-	}
-};
-
-//special
-template <>
-inline CallResult SafeOperators::Multiply<int>(IN const int& left, IN const int& right, OUT int& result) throw()
-{
-	int64 result64 = static_cast<int64>(left) * static_cast<int64>(right);
-	if( result64 > Limits<int>::Max || result64 < Limits<int>::Min ) {
-		return CallResult(SystemCallResults::Overflow);
-	}
-	result = static_cast<int>(result64);
-	return CallResult(SystemCallResults::OK);
-}
-
-template <>
-inline CallResult SafeOperators::Multiply<uint>(IN const uint& left, IN const uint& right, OUT uint& result) throw()
-{
-	uint64 result64 = static_cast<uint64>(left) * static_cast<uint64>(right);
-	if( result64 > Limits<uint>::Max ) {
-		return CallResult(SystemCallResults::Overflow);
-	}
-	result = static_cast<uint>(result64);
-	return CallResult(SystemCallResults::OK);
-}
-
-//------------------------------------------------------------------------------
-// logic
-
-// LogicalOperators
-
-class LogicalOperators
-{
-public:
-	template <class T>
-	static bool IsEQ(const T& t1, const T& t2) throw()
-	{
-		return t1 == t2;
-	}
-	template <class T>
-	static bool IsNE(const T& t1, const T& t2) throw()
-	{
-		return t1 != t2;
-	}
-	template <class T>
-	static bool IsLT(const T& t1, const T& t2) throw()
-	{
-		return t1 < t2;
-	}
-	template <class T>
-	static bool IsGT(const T& t1, const T& t2) throw()
-	{
-		return t1 > t2;
-	}
-	template <class T>
-	static bool IsLE(const T& t1, const T& t2) throw()
-	{
-		return t1 <= t2;
-	}
-	template <class T>
-	static bool IsGE(const T& t1, const T& t2) throw()
-	{
-		return t1 >= t2;
-	}
-};
-
-//special
-template <>
-inline bool LogicalOperators::IsEQ<float>(const float& t1, const float& t2) throw()
-{
-	return ::fabsf(t1 - t2) < FLT_EPSILON;
-}
-
-template <>
-inline bool LogicalOperators::IsEQ<double>(const double& t1, const double& t2) throw()
-{
-	return ::fabs(t1 - t2) < DBL_EPSILON;
-}
-
-template <>
-inline bool LogicalOperators::IsNE<float>(const float& t1, const float& t2) throw()
-{
-	return ::fabsf(t1 - t2) >= FLT_EPSILON;
-}
-
-template <>
-inline bool LogicalOperators::IsNE<double>(const double& t1, const double& t2) throw()
-{
-	return ::fabs(t1 - t2) >= DBL_EPSILON;
-}
-
-template <>
-inline bool LogicalOperators::IsLT<float>(const float& t1, const float& t2) throw()
-{
-	return t1 + FLT_EPSILON <= t2;
-}
-
-template <>
-inline bool LogicalOperators::IsLT<double>(const double& t1, const double& t2) throw()
-{
-	return t1 + DBL_EPSILON <= t2;
-}
-
-template <>
-inline bool LogicalOperators::IsGT<float>(const float& t1, const float& t2) throw()
-{
-	return IsLT<float>(t2, t1);
-}
-
-template <>
-inline bool LogicalOperators::IsGT<double>(const double& t1, const double& t2) throw()
-{
-	return IsLT<double>(t2, t1);
-}
-
-template <>
-inline bool LogicalOperators::IsLE<float>(const float& t1, const float& t2) throw()
-{
-	return !IsGT<float>(t1, t2);
-}
-
-template <>
-inline bool LogicalOperators::IsLE<double>(const double& t1, const double& t2) throw()
-{
-	return !IsGT<double>(t1, t2);
-}
-
-template <>
-inline bool LogicalOperators::IsGE<float>(const float& t1, const float& t2) throw()
-{
-	return !IsLT<float>(t1, t2);
-}
-
-template <>
-inline bool LogicalOperators::IsGE<double>(const double& t1, const double& t2) throw()
-{
-	return !IsLT<double>(t1, t2);
-}
+typedef safe_operators  SafeOperators;
 
 //------------------------------------------------------------------------------
 //Traits
 
 // DefaultCompareTrait<T>
-
 template <typename T>
-class DefaultCompareTrait
+using DefaultCompareTrait = default_compare_trait<T>;
+
+// CharCaseIgnoreCompareTrait<Tchar>
+
+template <typename Tchar>
+class CharCaseIgnoreCompareTrait
 {
 public:
-	//common versions
-	static bool IsEQ(const T& t1, const T& t2) throw()
+	static bool IsEQ(const Tchar& t1, const Tchar& t2) throw()
 	{
-		return LogicalOperators::IsEQ(t1, t2);
+		return char_upper(t1) == char_upper(t2);
 	}
-	static bool IsNE(const T& t1, const T& t2) throw()
+	static bool IsNE(const Tchar& t1, const Tchar& t2) throw()
 	{
-		return LogicalOperators::IsNE(t1, t2);
+		return char_upper(t1) != char_upper(t2);
 	}
-	static bool IsGT(const T& t1, const T& t2) throw()
+	static bool IsGT(const Tchar& t1, const Tchar& t2) throw()
 	{
-		return LogicalOperators::IsGT(t1, t2);
+		return char_upper(t1) > char_upper(t2);
 	}
-	static bool IsLT(const T& t1, const T& t2) throw()
+	static bool IsLT(const Tchar& t1, const Tchar& t2) throw()
 	{
-		return LogicalOperators::IsLT(t1, t2);
+		return char_upper(t1) < char_upper(t2);
 	}
-	static bool IsGE(const T& t1, const T& t2) throw()
+	static bool IsGE(const Tchar& t1, const Tchar& t2) throw()
 	{
-		return LogicalOperators::IsGE(t1, t2);
+		return char_upper(t1) >= char_upper(t2);
 	}
-	static bool IsLE(const T& t1, const T& t2) throw()
+	static bool IsLE(const Tchar& t1, const Tchar& t2) throw()
 	{
-		return LogicalOperators::IsLE(t1, t2);
+		return char_upper(t1) <= char_upper(t2);
 	}
-	static int Compare(const T& t1, const T& t2) throw()
+	static int Compare(const Tchar& t1, const Tchar& t2) throw()
 	{
-		if( IsLT(t1, t2 ) )
-			return -1;
-		if( IsEQ(t1, t2) )
-			return 0;
-		assert( IsGT(t1, t2) );
-		return 1;
+		return (int)(char_upper(t1) - char_upper(t2));
 	}
 };
-
-//special versions
-
 
 // DefaultHashTrait<T>
-
 template <typename T>
-class DefaultHashTrait
-{
-public:
-	static uintptr CalcHash(const T& t) throw()
-	{
-		return (uintptr)t;
-	}
-};
-
-//special versions
-
-
-/*
-3 layers:
-native : == != ...
-LogicalOperators
-<Element>Trait
-*/
-//------------------------------------------------------------------------------
-//iterator
-
-// ReverseIterator<T>
-
-template <typename T>
-class ReverseIterator
-{
-public:
-	ReverseIterator() throw()
-	{
-	}
-	explicit ReverseIterator(const T& iter) throw() : m_iter(iter)
-	{
-	}
-	ReverseIterator(const ReverseIterator<T>& src) throw() : m_iter(src.m_iter)
-	{
-	}
-	~ReverseIterator() throw()
-	{
-	}
-
-	//operators
-	ReverseIterator<T>& operator=(const ReverseIterator<T>& src) throw()
-	{
-		if( this != &src ) {
-			m_iter = src.m_iter;
-		}
-		return *this;
-	}
-
-	//logical
-	bool operator==(const ReverseIterator<T>& right) const throw()
-	{
-		return m_iter == right.m_iter;
-	}
-	bool operator!=(const ReverseIterator<T>& right) const throw()
-	{
-		return m_iter != right.m_iter;
-	}
-
-	const T& get_Value() const throw()
-	{
-		T tmp(m_iter);
-		tmp.MovePrev();
-		return tmp.get_Value();
-	}
-	T& get_Value() throw()
-	{
-		T tmp(m_iter);
-		tmp.MovePrev();
-		return tmp.get_Value();
-	}
-	void set_Value(const T& t)  //may throw
-	{
-		T tmp(m_iter);
-		tmp.MovePrev();
-		tmp.set_Value(t);
-	}
-	void set_Value(T&& t)  //may throw
-	{
-		T tmp(m_iter);
-		tmp.MovePrev();
-		tmp.set_Value(rv_forward(t));
-	}
-
-	//methods
-	void MoveNext() throw()
-	{
-		m_iter.MovePrev();
-	}
-	void MovePrev() throw()
-	{
-		m_iter.MoveNext();
-	}
-
-private:
-	T m_iter;
-};
+using DefaultHashTrait = default_hash_trait<T>;
 
 //------------------------------------------------------------------------------
 //tuple
@@ -776,220 +389,894 @@ public:
 };
 
 //------------------------------------------------------------------------------
-// Pointers
+// Fixed Array
 
-// RefPtr<T>
+// FixedArrayCompareTrait<T, TCompareTrait>
+//  T: FixedArray<...>
 
-template <class T>
-class RefPtr
+template <class T, class TCompareTrait = DefaultCompareTrait<typename T::EType>>
+class FixedArrayCompareTrait
 {
 public:
-	RefPtr() throw() : m_p(NULL)
+	static bool IsEQ(const T& t1, const T& t2) throw()
 	{
-	}
-	explicit RefPtr(const T& t) throw() : m_p(&(const_cast<T&>(t)))
-	{
-	}
-	explicit RefPtr(const T* p) throw() : m_p(const_cast<T*>(p))
-	{
-	}
-	RefPtr(const RefPtr<T>& src) throw() : m_p(src.m_p)
-	{
-	}
-	~RefPtr() throw()
-	{
-	}
-
-	void Release() throw()
-	{
-		m_p = NULL;
-	}
-
-	//operators
-	RefPtr<T>& operator=(const RefPtr<T>& src) throw()
-	{
-		if( this != &src ) {
-			m_p = src.m_p;
+		typename T::EType* p1 = FixedArrayHelper::GetInternalPointer(t1);
+		typename T::EType* p2 = FixedArrayHelper::GetInternalPointer(t2);
+		for( uintptr i = 0; i < T::c_size; i ++ ) {
+			if( TCompareTrait::IsNE(p1[i], p2[i]) )
+				return false;
 		}
-		return *this;
+		return true;
 	}
-	RefPtr<T>& operator=(T* p) throw()
+	static bool IsNE(const T& t1, const T& t2) throw()
 	{
-		m_p = p;
-		return *this;
-	}
-
-	//logical
-	bool operator==(const RefPtr<T>& right) const throw()
-	{
-		return m_p == right.m_p;
-	}
-	bool operator!=(const RefPtr<T>& right) const throw()
-	{
-		return !(*this == right);
-	}
-	bool operator<(const RefPtr<T>& right) const throw()
-	{
-		return m_p < right.m_p;
-	}
-	bool operator>(const RefPtr<T>& right) const throw()
-	{
-		return right < *this;
-	}
-	bool operator<=(const RefPtr<T>& right) const throw()
-	{
-		return !operator>(right);
-	}
-	bool operator>=(const RefPtr<T>& right) const throw()
-	{
-		return !operator<(right);
-	}
-
-	//methods
-	bool IsNull() const throw()
-	{
-		return m_p == NULL;
-	}
-
-	const T& Deref() const throw()
-	{
-		assert( !IsNull() );
-		return *m_p;
-	}
-	T& Deref() throw()
-	{
-		assert( !IsNull() );
-		return *m_p;
-	}
-
-private:
-	T* m_p;
-
-private:
-	friend class RefPtrHelper;
-};
-
-// RefPtrHelper
-
-class RefPtrHelper
-{
-public:
-	template <class T>
-	static RefPtr<T> ToRefPtr(const T& t) throw()
-	{
-		return RefPtr<T>(t);
-	}
-	//cast
-	template <class T, class TBase>
-	static RefPtr<TBase> TypeCast(const RefPtr<T>& t) throw()
-	{
-		assert( !t.IsNull() );
-		return RefPtr<TBase>(static_cast<const TBase&>(t.Deref()));
-	}
-	//clone
-	template <class T>
-	static void Clone(const RefPtr<T>& tSrc, RefPtr<T>& tDest) //may throw
-	{
-		if( tSrc.m_p != tDest.m_p && !tSrc.IsNull() && !tDest.IsNull() ) {
-			tDest.Deref() = tSrc.Deref();
+		typename T::EType* p1 = FixedArrayHelper::GetInternalPointer(t1);
+		typename T::EType* p2 = FixedArrayHelper::GetInternalPointer(t2);
+		for( uintptr i = 0; i < T::c_size; i ++ ) {
+			if( TCompareTrait::IsNE(p1[i], p2[i]) )
+				return true;
 		}
+		return false;
 	}
-
-	//get internal pointer
-	template <class T>
-	static T* GetInternalPointer(const RefPtr<T>& t) throw()
+	static bool IsGT(const T& t1, const T& t2) throw()
 	{
-		return t.m_p;
+		typename T::EType* p1 = FixedArrayHelper::GetInternalPointer(t1);
+		typename T::EType* p2 = FixedArrayHelper::GetInternalPointer(t2);
+		for( uintptr i = T::c_size; i > 0; i -- ) {
+			int res = TCompareTrait::Compare(p1[i - 1], p2[i - 1]);
+			if( res > 0 )
+				return true;
+			if( res < 0 )
+				return false;
+		}
+		return false;
+	}
+	static bool IsLT(const T& t1, const T& t2) throw()
+	{
+		typename T::EType* p1 = FixedArrayHelper::GetInternalPointer(t1);
+		typename T::EType* p2 = FixedArrayHelper::GetInternalPointer(t2);
+		for( uintptr i = T::c_size; i > 0; i -- ) {
+			int res = TCompareTrait::Compare(p1[i - 1], p2[i - 1]);
+			if( res > 0 )
+				return false;
+			if( res < 0 )
+				return true;
+		}
+		return false;
+	}
+	static bool IsGE(const T& t1, const T& t2) throw()
+	{
+		return !IsLT(t1, t2);
+	}
+	static bool IsLE(const T& t1, const T& t2) throw()
+	{
+		return !IsGT(t1, t2);
+	}
+	//Compare
+	static int Compare(const T& t1, const T& t2) throw()
+	{
+		typename T::EType* p1 = FixedArrayHelper::GetInternalPointer(t1);
+		typename T::EType* p2 = FixedArrayHelper::GetInternalPointer(t2);
+		for( uintptr i = T::c_size; i > 0; i -- ) {
+			int res = TCompareTrait::Compare(p1[i - 1], p2[i - 1]);
+			if( res > 0 )
+				return 1;
+			if( res < 0 )
+				return -1;
+		}
+		return 0;
 	}
 };
 
-// WeakObjectRef<T>
-//   T: must have GetHandle, Attach and Detach methods
-template <class T>
-class WeakObjectRef
+// FixedArrayBigEndianCompareTrait<T, TCompareTrait>
+//  T: FixedArray<...>
+
+template <class T, class TCompareTrait = DefaultCompareTrait<typename T::EType>>
+class FixedArrayBigEndianCompareTrait
 {
 public:
-	WeakObjectRef() throw()
+	static bool IsEQ(const T& t1, const T& t2) throw()
 	{
+		return FixedArrayCompareTrait<T, TCompareTrait>::IsEQ(t1, t2);
 	}
-	WeakObjectRef(const WeakObjectRef& src) throw()
+	static bool IsNE(const T& t1, const T& t2) throw()
 	{
-		//m_t is null
-		m_t.Attach(src.m_t.GetHandle());
+		return FixedArrayCompareTrait<T, TCompareTrait>::IsNE(t1, t2);
 	}
-	WeakObjectRef(const T& t) throw()
+	static bool IsGT(const T& t1, const T& t2) throw()
 	{
-		m_t.Attach(t.GetHandle());
-	}
-	WeakObjectRef(T&& t) throw()
-	{
-		m_t.Attach(t.Detach());
-	}
-	~WeakObjectRef() throw()
-	{
-		m_t.Detach();
-	}
-
-	//operators
-	WeakObjectRef& operator=(const WeakObjectRef& src) throw()
-	{
-		if( this != &src ) {
-			m_t.Detach();
-			m_t.Attach(src.m_t.GetHandle());
+		typename T::EType* p1 = FixedArrayHelper::GetInternalPointer(t1);
+		typename T::EType* p2 = FixedArrayHelper::GetInternalPointer(t2);
+		for( uintptr i = 0; i < T::c_size; i ++ ) {
+			int res = TCompareTrait::Compare(p1[i], p2[i]);
+			if( res > 0 )
+				return true;
+			if( res < 0 )
+				return false;
 		}
-		return *this;
+		return false;
 	}
-	WeakObjectRef& operator=(const T& t) throw()
+	static bool IsLT(const T& t1, const T& t2) throw()
 	{
-		m_t.Detach();
-		m_t.Attach(t.GetHandle());
-		return *this;
+		typename T::EType* p1 = FixedArrayHelper::GetInternalPointer(t1);
+		typename T::EType* p2 = FixedArrayHelper::GetInternalPointer(t2);
+		for( uintptr i = 0; i < T::c_size; i ++ ) {
+			int res = TCompareTrait::Compare(p1[i], p2[i]);
+			if( res > 0 )
+				return false;
+			if( res < 0 )
+				return true;
+		}
+		return false;
 	}
-	WeakObjectRef& operator=(T&& t) throw()
+	static bool IsGE(const T& t1, const T& t2) throw()
 	{
-		m_t.Detach();
-		m_t.Attach(t.Detach());
-		return *this;
+		return !IsLT(t1, t2);
 	}
+	static bool IsLE(const T& t1, const T& t2) throw()
+	{
+		return !IsGT(t1, t2);
+	}
+	//Compare
+	static int Compare(const T& t1, const T& t2) throw()
+	{
+		typename T::EType* p1 = FixedArrayHelper::GetInternalPointer(t1);
+		typename T::EType* p2 = FixedArrayHelper::GetInternalPointer(t2);
+		for( uintptr i = 0; i < T::c_size; i ++ ) {
+			int res = TCompareTrait::Compare(p1[i], p2[i]);
+			if( res > 0 )
+				return 1;
+			if( res < 0 )
+				return -1;
+		}
+		return 0;
+	}
+};
 
-	//methods
-	const T& GetObject() const throw()
-	{
-		return m_t;
-	}
-	T& GetObject() throw()
-	{
-		return m_t;
-	}
+//------------------------------------------------------------------------------
+// Memory
 
-private:
-	T m_t;  //object may contain a pointer (or a handle) from system call or third party library
+// IMemoryManager
+
+typedef i_memory_manager  IMemoryManager;
+
+// IMemoryAllocatorRef32
+
+typedef i_memory_allocator_ref_32  IMemoryAllocatorRef32;
+
+// IMemoryAllocatorRef32Full
+
+typedef i_memory_allocator_ref_32_full  IMemoryAllocatorRef32Full;
+
+// IMemoryAllocatorRef64
+
+typedef i_memory_allocator_ref_64  IMemoryAllocatorRef64;
+
+// IMemoryAllocatorRef64Full
+
+typedef i_memory_allocator_ref_64_full  IMemoryAllocatorRef64Full;
+
+// AlignHelper
+
+class AlignHelper
+{
+public:
+	//T : Integer
+	//uAlign : it must be a value as 2^N.
+	template <typename T>
+	static T RoundUp(IN T n, IN uint uAlign) throw()
+	{
+		assert( uAlign > 0 );
+		//overflow is not checked
+		return T( (n + (uAlign - 1)) & ~(T(uAlign) - 1) );
+	}
+	template <typename T>
+	static T RoundUpThrow(IN T n, IN uint uAlign)
+	{
+		assert( uAlign > 0 );
+		T v = SafeOperators::AddThrow(n, T(uAlign - 1));
+		return T( (v) & ~(T(uAlign) - 1) );
+	}
+	template <typename T>
+	static T RoundDown(IN T n, IN uint uAlign) throw()
+	{
+		assert( uAlign > 0 );
+		return T( n & ~(T(uAlign) - 1) );
+	}
 };
 
 //------------------------------------------------------------------------------
 // File
 
 // file open types
-BEGIN_ENUM(FileOpenTypes)
-	ENUM_VALUE_ENTRY(Read,       0x00000000)
-	ENUM_VALUE_ENTRY(Write,      0x00000001)
-	ENUM_VALUE_ENTRY(ReadWrite,  0x00000002)
-END_ENUM()
+typedef file_open_types  FileOpenTypes;
 
 // file creation types (can combine with <or> operation)
-BEGIN_ENUM(FileCreationTypes)
-	ENUM_VALUE_ENTRY(Create,     0x00001000)
-	ENUM_VALUE_ENTRY(NoTruncate, 0x00002000)
-END_ENUM()
+typedef file_creation_types  FileCreationTypes;
 
-// FileStatus
+// StorageStatus
+typedef storage_status  StorageStatus;
 
-struct FileStatus
+//------------------------------------------------------------------------------
+// Constant String
+
+// ConstStringT<Tchar>
+template <typename Tchar>
+using ConstStringT = const_string_t<Tchar>;
+
+// ConstString*
+typedef const_string_a  ConstStringA;
+typedef const_string_h  ConstStringH;
+typedef const_string_l  ConstStringL;
+typedef const_string_s  ConstStringS;
+typedef const_string_w  ConstStringW;
+
+// Traits
+
+// ConstStringCompareTrait<T>
+
+template <class T>
+class ConstStringCompareTrait
 {
-	int64       iSize;     //file size in bytes
-	SystemTime  tmAccess;  //time of last access
-	SystemTime  tmModify;  //time of last modification
-	SystemTime  tmCreate;  //time of creation
+public:
+	static bool IsEQ(const T& t1, const T& t2) throw()
+	{
+		return compare_string(ConstArrayHelper::GetInternalPointer(t1), ConstArrayHelper::GetInternalPointer(t2)) == 0;
+	}
+	static bool IsNE(const T& t1, const T& t2) throw()
+	{
+		return compare_string(ConstArrayHelper::GetInternalPointer(t1), ConstArrayHelper::GetInternalPointer(t2)) != 0;
+	}
+	static bool IsGT(const T& t1, const T& t2) throw()
+	{
+		return compare_string(ConstArrayHelper::GetInternalPointer(t1), ConstArrayHelper::GetInternalPointer(t2)) > 0;
+	}
+	static bool IsLT(const T& t1, const T& t2) throw()
+	{
+		return compare_string(ConstArrayHelper::GetInternalPointer(t1), ConstArrayHelper::GetInternalPointer(t2)) < 0;
+	}
+	static bool IsGE(const T& t1, const T& t2) throw()
+	{
+		return compare_string(ConstArrayHelper::GetInternalPointer(t1), ConstArrayHelper::GetInternalPointer(t2)) >= 0;
+	}
+	static bool IsLE(const T& t1, const T& t2) throw()
+	{
+		return compare_string(ConstArrayHelper::GetInternalPointer(t1), ConstArrayHelper::GetInternalPointer(t2)) <= 0;
+	}
+	static int Compare(const T& t1, const T& t2) throw()
+	{
+		return compare_string(ConstArrayHelper::GetInternalPointer(t1), ConstArrayHelper::GetInternalPointer(t2));
+	}
+};
+
+// ConstStringCaseIgnoreCompareTrait<T>
+
+template <class T>
+class ConstStringCaseIgnoreCompareTrait
+{
+public:
+	static bool IsEQ(const T& t1, const T& t2) throw()
+	{
+		return compare_string_case_insensitive(ConstArrayHelper::GetInternalPointer(t1), ConstArrayHelper::GetInternalPointer(t2)) == 0;
+	}
+	static bool IsNE(const T& t1, const T& t2) throw()
+	{
+		return compare_string_case_insensitive(ConstArrayHelper::GetInternalPointer(t1), ConstArrayHelper::GetInternalPointer(t2)) != 0;
+	}
+	static bool IsGT(const T& t1, const T& t2) throw()
+	{
+		return compare_string_case_insensitive(ConstArrayHelper::GetInternalPointer(t1), ConstArrayHelper::GetInternalPointer(t2)) > 0;
+	}
+	static bool IsLT(const T& t1, const T& t2) throw()
+	{
+		return compare_string_case_insensitive(ConstArrayHelper::GetInternalPointer(t1), ConstArrayHelper::GetInternalPointer(t2)) < 0;
+	}
+	static bool IsGE(const T& t1, const T& t2) throw()
+	{
+		return compare_string_case_insensitive(ConstArrayHelper::GetInternalPointer(t1), ConstArrayHelper::GetInternalPointer(t2)) >= 0;
+	}
+	static bool IsLE(const T& t1, const T& t2) throw()
+	{
+		return compare_string_case_insensitive(ConstArrayHelper::GetInternalPointer(t1), ConstArrayHelper::GetInternalPointer(t2)) <= 0;
+	}
+	static int Compare(const T& t1, const T& t2) throw()
+	{
+		return compare_string_case_insensitive(ConstArrayHelper::GetInternalPointer(t1), ConstArrayHelper::GetInternalPointer(t2));
+	}
+};
+
+// ConstStringHashTrait<T>
+
+template <class T>
+class ConstStringHashTrait
+{
+public:
+	static uintptr CalcHash(const T& t) throw()
+	{
+		uintptr uHash = 0;
+		const typename T::EType* pch = ConstArrayHelper::GetInternalPointer(t);
+		assert( pch != NULL );
+		while( *pch != 0 ) {
+			uHash = (uHash << 5) + uHash + (uintptr)(*pch);
+			pch ++;
+		}
+		return uHash;
+	}
+};
+
+// ConstStringCaseIgnoreHashTrait<T>
+
+template <class T>
+class ConstStringCaseIgnoreHashTrait
+{
+public:
+	static uintptr CalcHash(const T& t) throw()
+	{
+		uintptr uHash = 0;
+		const typename T::EType* pch = ConstArrayHelper::GetInternalPointer(t);
+		assert( pch != NULL );
+		while( *pch != 0 ) {
+			uHash = (uHash << 5) + uHash + (uintptr)char_upper(*pch);
+			pch ++;
+		}
+		return uHash;
+	}
+};
+
+// ConsStringHelper
+typedef const_string_helper  ConstStringHelper;
+
+//------------------------------------------------------------------------------
+// Fixed String
+
+#pragma pack(push, 1)
+
+// FixedStringT<Tchar, t_size>
+//   Tchar: CharA CharH CharL, CharS CharW
+template <typename Tchar, uintptr t_size>
+class FixedStringT : public FixedArray<Tchar, t_size>
+{
+private:
+	typedef FixedArray<Tchar, t_size>  baseClass;
+	typedef FixedStringT<Tchar, t_size>  thisClass;
+
+public:
+	FixedStringT() throw() : m_uLength(0)
+	{
+		baseClass::m_data[0] = 0;
+	}
+	FixedStringT(const thisClass& src) throw() : baseClass(static_cast<const baseClass&>(src)), m_uLength(src.m_uLength)
+	{
+		assert( m_uLength < t_size );
+		mem_copy(src.m_data, sizeof(Tchar) * (m_uLength + 1), baseClass::m_data);
+	}
+	~FixedStringT() throw()
+	{
+	}
+
+	//operators
+	thisClass& operator=(const thisClass& src) throw()
+	{
+		if( this != &src ) {
+			m_uLength = src.m_uLength;
+			assert( m_uLength < t_size );
+			mem_copy(src.m_data, sizeof(Tchar) * (m_uLength + 1), baseClass::m_data);
+		}
+		return *this;
+	}
+
+	uintptr GetLength() const throw()
+	{
+		return m_uLength;
+	}
+	void SetLength(uintptr uLength) throw()
+	{
+		assert( uLength < t_size );
+		m_uLength = uLength;
+		baseClass::m_data[m_uLength] = 0;
+	}
+
+	bool IsEmpty() const throw()
+	{
+		return GetLength() == 0;
+	}
+
+	//position
+	typename thisClass::Position GetTailPosition() const throw()
+	{
+		return typename thisClass::Position(m_uLength - 1);
+	}
+
+	//iterators
+	const typename thisClass::Iterator GetEnd() const throw()
+	{
+		return Iterator(RefPtr<Tchar>(baseClass::m_data + m_uLength));
+	}
+	typename thisClass::Iterator GetEnd() throw()
+	{
+		return Iterator(RefPtr<Tchar>(baseClass::m_data + m_uLength));
+	}
+	const ReverseIterator<typename thisClass::Iterator> GetReverseBegin() const throw()
+	{
+		return ReverseIterator<typename thisClass::Iterator>(GetEnd());
+	}
+	ReverseIterator<typename thisClass::Iterator> GetReverseBegin() throw()
+	{
+		return ReverseIterator<typename thisClass::Iterator>(GetEnd());
+	}
+
+	//methods
+	void RecalcLength() throw()
+	{
+		m_uLength = calc_string_length(baseClass::m_data);
+	}
+
+private:
+	uintptr m_uLength;
+
+private:
+	//logical
+	bool operator==(const thisClass& right) const throw();
+	bool operator!=(const thisClass& right) const throw();
+	bool operator<(const thisClass& right) const throw();
+	bool operator>(const thisClass& right) const throw();
+	bool operator<=(const thisClass& right) const throw();
+	bool operator>=(const thisClass& right) const throw();
+};
+
+#pragma pack(pop)
+
+// FixedStringHelper
+
+class FixedStringHelper
+{
+public:
+	//To C-style string
+	template <typename Tchar, uintptr t_size>
+	static RefPtr<Tchar> To_C_Style(const FixedStringT<Tchar, t_size>& str, uintptr uStart = 0) throw()
+	{
+		assert( uStart <= str.GetLength() );
+		return RefPtr<Tchar>(FixedArrayHelper::GetInternalPointer(str) + uStart);
+	}
+
+	//append character
+	//  return: 0 or 1, whether the character is copied
+	template <typename Tchar, uintptr t_size>
+	static uintptr Append(const Tchar& ch, INOUT FixedStringT<Tchar, t_size>& strDest) throw()
+	{
+		uintptr uCount = strDest.GetLength();
+		if( uCount >= t_size - 1 )
+			return 0;
+		strDest.SetLength(uCount + 1);
+		strDest.SetAt(uCount, ch);
+		return 1;
+	}
+
+	//insert character
+	template <typename Tchar, uintptr t_size>
+	static uintptr Insert(uintptr uPos, const Tchar& ch, FixedStringT<Tchar, t_size>& str) throw()
+	{
+		uintptr uLength = str.GetLength();
+		if( uPos > uLength || uLength >= t_size - 1 )
+			return 0;
+		mem_move(FixedArrayHelper::GetInternalPointer(str) + uPos, (uLength - uPos) * sizeof(Tchar), FixedArrayHelper::GetInternalPointer(str) + uPos + 1);
+		str.SetLength(uLength + 1);
+		str.SetAt(uPos, ch);
+		return 1;
+	}
+
+	//delete
+	template <typename Tchar, uintptr t_size>
+	static uintptr Delete(uintptr uPos, uintptr uLength, FixedStringT<Tchar, t_size>& str) throw()
+	{
+		uintptr uCount = str.GetLength();
+		uintptr uRet = calc_sub_string_act_length(uCount, uPos, uLength);
+		if( uRet == 0 )
+			return 0;
+		mem_move(FixedArrayHelper::GetInternalPointer(str) + uPos + uRet, (uCount - uPos - uRet) * sizeof(Tchar), FixedArrayHelper::GetInternalPointer(str) + uPos);
+		str.SetLength(uCount - uRet);
+		return uRet;
+	}
+
+	//replace
+	template <typename Tchar, uintptr t_size, class TCompareTrait = DefaultCompareTrait<Tchar>>
+	static uintptr Replace(const Tchar& chOld, const Tchar& chNew, INOUT FixedStringT<Tchar, t_size>& str) throw()
+	{
+		assert( chOld != 0 && chNew != 0 && TCompareTrait::IsNE(chOld, chNew) );
+		if( str.IsEmpty() )
+			return 0;
+		return coll_replace_elements<typename FixedStringT<Tchar, t_size>::Iterator, TCompareTrait>(chOld, chNew, str.GetBegin(), str.GetEnd());
+	}
+
+	//find (return value : check null)
+	template <typename Tchar, uintptr t_size>
+	static typename FixedStringT<Tchar, t_size>::Iterator Find(const FixedStringT<Tchar, t_size>& str, const Tchar& ch, uintptr uStart) throw()
+	{
+		assert( uStart <= str.GetLength() );
+		return typename FixedStringT<Tchar, t_size>::Iterator(RefPtr<Tchar>(find_string_char(FixedArrayHelper::GetInternalPointer(str) + uStart, ch)));
+	}
+};
+
+// FixedStringCompareTrait<T>
+
+template <class T>
+class FixedStringCompareTrait
+{
+public:
+	static bool IsEQ(const T& t1, const T& t2) throw()
+	{
+		return compare_string(FixedArrayHelper::GetInternalPointer(t1), FixedArrayHelper::GetInternalPointer(t2)) == 0;
+	}
+	static bool IsNE(const T& t1, const T& t2) throw()
+	{
+		return compare_string(FixedArrayHelper::GetInternalPointer(t1), FixedArrayHelper::GetInternalPointer(t2)) != 0;
+	}
+	static bool IsGT(const T& t1, const T& t2) throw()
+	{
+		return compare_string(FixedArrayHelper::GetInternalPointer(t1), FixedArrayHelper::GetInternalPointer(t2)) > 0;
+	}
+	static bool IsLT(const T& t1, const T& t2) throw()
+	{
+		return compare_string(FixedArrayHelper::GetInternalPointer(t1), FixedArrayHelper::GetInternalPointer(t2)) < 0;
+	}
+	static bool IsGE(const T& t1, const T& t2) throw()
+	{
+		return compare_string(FixedArrayHelper::GetInternalPointer(t1), FixedArrayHelper::GetInternalPointer(t2)) >= 0;
+	}
+	static bool IsLE(const T& t1, const T& t2) throw()
+	{
+		return compare_string(FixedArrayHelper::GetInternalPointer(t1), FixedArrayHelper::GetInternalPointer(t2)) <= 0;
+	}
+	static int Compare(const T& t1, const T& t2) throw()
+	{
+		return compare_string(FixedArrayHelper::GetInternalPointer(t1), FixedArrayHelper::GetInternalPointer(t2));
+	}
+};
+
+// FixedStringCaseIgnoreCompareTrait<T>
+
+template <class T>
+class FixedStringCaseIgnoreCompareTrait
+{
+public:
+	static bool IsEQ(const T& t1, const T& t2) throw()
+	{
+		return compare_string_case_insensitive(FixedArrayHelper::GetInternalPointer(t1), FixedArrayHelper::GetInternalPointer(t2)) == 0;
+	}
+	static bool IsNE(const T& t1, const T& t2) throw()
+	{
+		return compare_string_case_insensitive(FixedArrayHelper::GetInternalPointer(t1), FixedArrayHelper::GetInternalPointer(t2)) != 0;
+	}
+	static bool IsGT(const T& t1, const T& t2) throw()
+	{
+		return compare_string_case_insensitive(FixedArrayHelper::GetInternalPointer(t1), FixedArrayHelper::GetInternalPointer(t2)) > 0;
+	}
+	static bool IsLT(const T& t1, const T& t2) throw()
+	{
+		return compare_string_case_insensitive(FixedArrayHelper::GetInternalPointer(t1), FixedArrayHelper::GetInternalPointer(t2)) < 0;
+	}
+	static bool IsGE(const T& t1, const T& t2) throw()
+	{
+		return compare_string_case_insensitive(FixedArrayHelper::GetInternalPointer(t1), FixedArrayHelper::GetInternalPointer(t2)) >= 0;
+	}
+	static bool IsLE(const T& t1, const T& t2) throw()
+	{
+		return compare_string_case_insensitive(FixedArrayHelper::GetInternalPointer(t1), FixedArrayHelper::GetInternalPointer(t2)) <= 0;
+	}
+	static int Compare(const T& t1, const T& t2) throw()
+	{
+		return compare_string_case_insensitive(FixedArrayHelper::GetInternalPointer(t1), FixedArrayHelper::GetInternalPointer(t2));
+	}
+};
+
+// FixedStringHashTrait<T>
+
+template <class T>
+class FixedStringHashTrait
+{
+public:
+	static uintptr CalcHash(const T& t) throw()
+	{
+		uintptr uHash = 0;
+		const typename T::EType* pch = FixedArrayHelper::GetInternalPointer(t);
+		assert( pch != NULL );
+		while( *pch != 0 ) {
+			uHash = (uHash << 5) + uHash + (uintptr)(*pch);
+			pch ++;
+		}
+		return uHash;
+	}
+};
+
+// FixedStringCaseIgnoreHashTrait<T>
+
+template <class T>
+class FixedStringCaseIgnoreHashTrait
+{
+public:
+	static uintptr CalcHash(const T& t) throw()
+	{
+		uintptr uHash = 0;
+		const typename T::EType* pch = FixedArrayHelper::GetInternalPointer(t);
+		assert( pch != NULL );
+		while( *pch != 0 ) {
+			uHash = (uHash << 5) + uHash + (uintptr)char_upper(*pch);
+			pch ++;
+		}
+		return uHash;
+	}
+};
+
+// MessageException<t_size>
+
+template <uintptr t_size>
+class MessageException : public Exception
+{
+public:
+	typedef FixedStringT<CharS, t_size>  MessageBufferClass;
+
+public:
+	MessageException() throw()
+	{
+	}
+	MessageException(const MessageException<t_size>& src) throw() : Exception(static_cast<const Exception&>(src)), m_messageBuffer(src.m_messageBuffer)
+	{
+	}
+	~MessageException() throw()
+	{
+	}
+
+	MessageException<t_size>& operator=(const MessageException<t_size>& src) throw()
+	{
+		Exception::operator=(static_cast<const Exception&>(src));
+		m_messageBuffer = src.m_messageBuffer;  //no check self
+		return *this;
+	}
+
+	const MessageBufferClass& GetMessageBuffer() const throw()
+	{
+		return m_messageBuffer;
+	}
+	MessageBufferClass& GetMessageBuffer() throw()
+	{
+		return m_messageBuffer;
+	}
+
+private:
+	MessageBufferClass  m_messageBuffer;
+};
+
+//------------------------------------------------------------------------------
+// Swap
+
+template <typename T>
+inline void Swap(T& t1, T& t2)
+{
+	assert( &t1 != &t2 );
+	T tmp = static_cast<T&&>(t1);
+	t1 = static_cast<T&&>(t2);
+	t2 = static_cast<T&&>(tmp);
+}
+
+template <>
+inline void Swap<int>(int& t1, int& t2)
+{
+	assert( &t1 != &t2 );
+	t1 ^= t2 ^= t1 ^= t2;
+}
+
+//------------------------------------------------------------------------------
+// Synchronization
+
+// Semaphore
+typedef inprocess_semaphore      Semaphore;
+typedef interprocess_semaphore   ProcessSemaphore;
+
+// Mutex
+typedef inprocess_mutex      Mutex;
+typedef interprocess_mutex   ProcessMutex;
+
+// Condition
+/*
+lock Mutex
+while( !test_predicate() )
+	Wait
+change shared data
+unlock Mutex
+[option] [lock] [check shared data] Signal or SignalAll for other threads [unlock]
+*/
+typedef inprocess_condition  Condition;
+
+// RWLock
+typedef inprocess_rwlock  RWLock;
+
+// MutexLock
+
+class MutexLock
+{
+public:
+	MutexLock(Mutex& t, bool bInitialLock = true) throw() : m_mtx(t), m_bLocked(false)
+	{
+		if( bInitialLock )
+			Lock();
+	}
+	~MutexLock() throw()
+	{
+		if( m_bLocked )
+			Unlock();
+	}
+
+	void Lock() throw()
+	{
+		assert( !m_bLocked );
+		m_mtx.Deref().Lock();
+		m_bLocked = true;
+	}
+	void Unlock() throw()
+	{
+		assert( m_bLocked );
+		m_mtx.Deref().Unlock();
+		m_bLocked = false;
+	}
+	bool TryLock() throw()
+	{
+		assert( !m_bLocked );
+		bool bRet = m_mtx.Deref().TryLock();
+		if( bRet )
+			m_bLocked = true;
+		return bRet;
+	}
+
+private:
+	RefPtr<Mutex>  m_mtx;
+	bool  m_bLocked;
+
+private:
+	//noncopyable
+	MutexLock(const MutexLock&) throw();
+	MutexLock& operator=(const MutexLock&) throw();
+};
+
+// SyncLock<T>
+
+template <class T>
+class SyncLock
+{
+public:
+	SyncLock(T& t, bool bInitialLock = true) : m_t(t), m_bLocked(false)
+	{
+		if( bInitialLock )
+			Lock();  //may throw
+	}
+	~SyncLock() throw()
+	{
+		if( m_bLocked )
+			Unlock();
+	}
+
+	void Lock()
+	{
+		assert( !m_bLocked );
+		m_t.Deref().Lock();  //may throw
+		m_bLocked = true;
+	}
+	void Unlock() throw()
+	{
+		assert( m_bLocked );
+		m_t.Deref().Unlock();
+		m_bLocked = false;
+	}
+	bool TryLock() throw()
+	{
+		assert( !m_bLocked );
+		bool bRet = m_t.Deref().TryLock();
+		if( bRet )
+			m_bLocked = true;
+		return bRet;
+	}
+
+private:
+	RefPtr<T>  m_t;
+	bool       m_bLocked;
+
+private:
+	//noncopyable
+	SyncLock(const SyncLock<T>&) throw();
+	SyncLock<T>& operator=(const SyncLock<T>&) throw();
+};
+
+// RWLockShared
+
+class RWLockShared
+{
+public:
+	RWLockShared(RWLock& rw, bool bInitialLock = true) throw() : m_rw(rw), m_bLocked(false)
+	{
+		if( bInitialLock )
+			Lock();
+	}
+	~RWLockShared() throw()
+	{
+		if( m_bLocked )
+			Unlock();
+	}
+
+	void Lock() throw()
+	{
+		assert( !m_bLocked );
+		m_rw.Deref().LockShared();
+		m_bLocked = true;
+	}
+	void Unlock() throw()
+	{
+		assert( m_bLocked );
+		m_rw.Deref().UnlockShared();
+		m_bLocked = false;
+	}
+	bool TryLock() throw()
+	{
+		assert( !m_bLocked );
+		bool bRet = m_rw.Deref().TryLockShared();
+		if( bRet )
+			m_bLocked = true;
+		return bRet;
+	}
+
+private:
+	RefPtr<RWLock>  m_rw;
+	bool            m_bLocked;
+
+private:
+	//noncopyable
+	RWLockShared(const RWLockShared&) throw();
+	RWLockShared& operator=(const RWLockShared&) throw();
+};
+
+// RWLockExclusive
+
+class RWLockExclusive
+{
+public:
+	RWLockExclusive(RWLock& rw, bool bInitialLock = true) throw() : m_rw(rw), m_bLocked(false)
+	{
+		if( bInitialLock )
+			Lock();
+	}
+	~RWLockExclusive() throw()
+	{
+		if( m_bLocked )
+			Unlock();
+	}
+
+	void Lock() throw()
+	{
+		assert( !m_bLocked );
+		m_rw.Deref().LockExclusive();
+		m_bLocked = true;
+	}
+	void Unlock() throw()
+	{
+		assert( m_bLocked );
+		m_rw.Deref().UnlockExclusive();
+		m_bLocked = false;
+	}
+	bool TryLock() throw()
+	{
+		assert( !m_bLocked );
+		bool bRet = m_rw.Deref().TryLockExclusive();
+		if( bRet )
+			m_bLocked = true;
+		return bRet;
+	}
+
+private:
+	RefPtr<RWLock>  m_rw;
+	bool            m_bLocked;
+
+private:
+	//noncopyable
+	RWLockExclusive(const RWLockExclusive&) throw();
+	RWLockExclusive& operator=(const RWLockExclusive&) throw();
 };
 
 //------------------------------------------------------------------------------
@@ -1002,32 +1289,7 @@ struct FileStatus
 // The macro of SERVICE:
 // User must define a macro: GKC_SERVICE_NAME
 //   e.g., #define GKC_SERVICE_NAME  _S("Host Server")
-
 //------------------------------------------------------------------------------
-//system types which can use exceptions
-
-#include "system/sys_types.h"
-
-//------------------------------------------------------------------------------
-
-////////////////////////////////////////////////////////////////////////////////
-namespace GKC {
-////////////////////////////////////////////////////////////////////////////////
-
-//------------------------------------------------------------------------------
-// IO
-
-// IoHandle
-
-typedef io_handle  IoHandle;
-
-// IoHandleHelper
-
-typedef io_handle_helper  IoHandleHelper;
-
-////////////////////////////////////////////////////////////////////////////////
-}
-////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 #endif //__GKC_DEF_H__

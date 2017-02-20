@@ -31,38 +31,38 @@ inline void set_default_locale() throw()
 
 // print_format
 //   return value: the number of typed characters, -1 means fail.
-inline int print_format(const CharA* szFormat, ...) throw()
+inline int print_format(const char_a* szFormat, ...) throw()
 {
-	CharA* szV = _convert_unified_format_string(szFormat);
+	char_a* szV = _os_convert_unified_format_string(szFormat);
 	if( szV == NULL )
 		return -1;
 	va_list ap;
 	va_start(ap, szFormat);
 	int ret = ::vprintf(szV, ap);
 	va_end(ap);
-	_free_unified_format_convert_string(szV);
+	_os_free_unified_format_convert_string(szV);
 	return ret;
 }
-inline int print_format(const CharL* szFormat, ...) throw()
+inline int print_format(const char_l* szFormat, ...) throw()
 {
-	CharL* szV = _convert_unified_format_string(szFormat);
+	char_l* szV = _os_convert_unified_format_string(szFormat);
 	if( szV == NULL )
 		return -1;
 	va_list ap;
 	va_start(ap, szFormat);
 	int ret = ::vwprintf(szV, ap);
 	va_end(ap);
-	_free_unified_format_convert_string(szV);
+	_os_free_unified_format_convert_string(szV);
 	return ret;
 }
 
 // print string
-inline void print_string(const CharA* sz) throw()
+inline void print_string(const char_a* sz) throw()
 {
 	//no check
 	::printf("%s", sz);
 }
-inline void print_string(const CharL* sz) throw()
+inline void print_string(const char_l* sz) throw()
 {
 	//no check
 	::wprintf(L"%ls", sz);
@@ -82,6 +82,9 @@ inline void print_string(const CharL* sz) throw()
 #define STDOUT_ATTR_BACK_INTENSITY     (0x00000080)
 #define STDOUT_ATTR_UNDERSCORE         (0x00000100)
 #define STDOUT_ATTR_REVERSE            (0x00000200)
+
+#define STDOUT_ATTR_FORE_KEEP          (0x00100000)
+#define STDOUT_ATTR_BACK_KEEP          (0x00200000)
 
 // stdout_attr
 class stdout_attr
@@ -110,11 +113,12 @@ public:
 	{
 		char szFormat[256];
 		szFormat[0] = 0;
+		bool bUnderScore = (uAttrs & STDOUT_ATTR_UNDERSCORE) != 0;
 		int ret = value_to_string(szFormat, sizeof(szFormat) / sizeof(char),
 								"\033[%d;%d;%dm",
-								(uAttrs & STDOUT_ATTR_REVERSE) ? (7) : ((uAttrs & STDOUT_ATTR_UNDERSCORE) ? (4) : ((uAttrs & (STDOUT_ATTR_FORE_INTENSITY | STDOUT_ATTR_BACK_INTENSITY)) ? (1) : (0))),  //mode
-								(uAttrs & (STDOUT_ATTR_FORE_RED | STDOUT_ATTR_FORE_GREEN | STDOUT_ATTR_FORE_BLUE)) + 30,         //foreground
-								((uAttrs & (STDOUT_ATTR_BACK_RED | STDOUT_ATTR_BACK_GREEN | STDOUT_ATTR_BACK_BLUE)) >> 4) + 40   //background
+								(uAttrs & STDOUT_ATTR_REVERSE) ? (7) : (bUnderScore ? (4) : ((uAttrs & (STDOUT_ATTR_FORE_INTENSITY | STDOUT_ATTR_BACK_INTENSITY)) ? (1) : (0))),       //mode
+								(uAttrs & STDOUT_ATTR_FORE_KEEP) ? (bUnderScore ? 38 : 39) : (uAttrs & (STDOUT_ATTR_FORE_RED | STDOUT_ATTR_FORE_GREEN | STDOUT_ATTR_FORE_BLUE)) + 30,  //foreground
+								(uAttrs & STDOUT_ATTR_BACK_KEEP) ? (49) : ((uAttrs & (STDOUT_ATTR_BACK_RED | STDOUT_ATTR_BACK_GREEN | STDOUT_ATTR_BACK_BLUE)) >> 4) + 40               //background
 								);
 		if( ret >= 0 )
 			szFormat[ret] = 0;
@@ -122,6 +126,9 @@ public:
 	}
 
 private:
+	//noncopyable
+	stdout_attr(const stdout_attr&) throw();
+	stdout_attr& operator=(const stdout_attr&) throw();
 };
 
 //------------------------------------------------------------------------------
@@ -129,28 +136,28 @@ private:
 
 // scan_format
 //  return value: the number of input items successfully matched and assigned. <0 means fail.
-inline int scan_format(const CharA* szFormat, ...) throw()
+inline int scan_format(const char_a* szFormat, ...) throw()
 {
-	CharA* szV = _convert_unified_format_string(szFormat);
+	char_a* szV = _os_convert_unified_format_string(szFormat);
 	if( szV == NULL )
 		return -1;
 	va_list ap;
 	va_start(ap, szFormat);
 	int ret = ::vscanf(szV, ap);
 	va_end(ap);
-	_free_unified_format_convert_string(szV);
+	_os_free_unified_format_convert_string(szV);
 	return ret;
 }
-inline int scan_format(const CharL* szFormat, ...) throw()
+inline int scan_format(const char_l* szFormat, ...) throw()
 {
-	CharL* szV = _convert_unified_format_string(szFormat);
+	char_l* szV = _os_convert_unified_format_string(szFormat);
 	if( szV == NULL )
 		return -1;
 	va_list ap;
 	va_start(ap, szFormat);
 	int ret = ::vwscanf(szV, ap);
 	va_end(ap);
-	_free_unified_format_convert_string(szV);
+	_os_free_unified_format_convert_string(szV);
 	return ret;
 }
 

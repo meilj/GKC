@@ -16,17 +16,13 @@ This file contains main function for console program.
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __GKC_CONST_H__
-	#error GkcConsoleMain.cpp requires GkcConst.h to be included first.
-#endif
-
 ////////////////////////////////////////////////////////////////////////////////
 
 /*
 class ProgramEntryPoint
 {
 public:
-	static int ConsoleMain(const GKC::ConstArray<GKC::ConstStringS>& args, const GKC::ConstArray<GKC::ConstStringS>& env);
+	static int ConsoleMain(const ConstArray<ConstStringS>& args, const ConstArray<ConstStringS>& env);
 };
 */
 

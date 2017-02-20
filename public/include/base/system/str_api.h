@@ -18,37 +18,99 @@
 //tools
 
 // char_lower
-inline CharA char_lower(CharA c) throw()
+inline char_a char_lower(char_a c) throw()
 {
-	return (CharA)::tolower((int)c);
+	return (char_a)::tolower((int)c);
 }
-inline CharH char_lower(CharH c) throw()
+inline char_h char_lower(char_h c) throw()
 {
-	return (CharH)::towlower((wint_t)c);
+	return (char_h)::towlower((wint_t)c);
 }
-inline CharL char_lower(CharL c) throw()
+inline char_l char_lower(char_l c) throw()
 {
-	return (CharL)::towlower((wint_t)c);
+	return (char_l)::towlower((wint_t)c);
 }
 // char_upper
-inline CharA char_upper(CharA c) throw()
+inline char_a char_upper(char_a c) throw()
 {
-	return (CharA)::toupper((int)c);
+	return (char_a)::toupper((int)c);
 }
-inline CharH char_upper(CharH c) throw()
+inline char_h char_upper(char_h c) throw()
 {
-	return (CharH)::towupper((wint_t)c);
+	return (char_h)::towupper((wint_t)c);
 }
-inline CharL char_upper(CharL c) throw()
+inline char_l char_upper(char_l c) throw()
 {
-	return (CharL)::towupper((wint_t)c);
+	return (char_l)::towupper((wint_t)c);
 }
 
 // calc_string_length
 
-inline uintptr calc_string_length(const CharA* s) throw()
+inline uintptr calc_string_length(const char_a* s) throw()
 {
 	return ::strlen(s);
+}
+
+// find_string_char
+
+inline char_a* find_string_char(const char_a* s, int c) throw()
+{
+	return (char_a*)::strchr(s, c);
+}
+
+// find_string_last_char
+
+inline char_a* find_string_last_char(const char_a* s, int c) throw()
+{
+	return (char_a*)::strrchr(s, c);
+}
+
+// find_string_charset
+
+inline char_a* find_string_charset(const char_a* s, const char_a* z) throw()
+{
+	return (char_a*)::strpbrk(s, z);
+}
+
+// find_string_string
+
+inline char_a* find_string_string(const char_a* s, const char_a* z) throw()
+{
+	return (char_a*)::strstr(s, z);
+}
+
+// char_is_*
+inline bool char_is_alpha(const char_a& ch) throw()
+{
+	return ::isalpha((int)ch) != 0;
+}
+inline bool char_is_lower(const char_a& ch) throw()
+{
+	return ::islower((int)ch) != 0;
+}
+inline bool char_is_upper(const char_a& ch) throw()
+{
+	return ::isupper((int)ch) != 0;
+}
+inline bool char_is_digit(const char_a& ch) throw()
+{
+	return ::isdigit((int)ch) != 0;
+}
+inline bool char_is_xdigit(const char_a& ch) throw()
+{
+	return ::isxdigit((int)ch) != 0;
+}
+inline bool char_is_blank(const char_a& ch) throw()
+{
+	return ::isblank((int)ch) != 0;
+}
+inline bool char_is_space(const char_a& ch) throw()
+{
+	return ::isspace((int)ch) != 0;
+}
+inline bool char_is_print(const char_a& ch) throw()
+{
+	return ::isprint((int)ch) != 0;
 }
 
 //------------------------------------------------------------------------------
@@ -91,8 +153,8 @@ modifier:
 h        short (d, o, x, X) or ushort (o, u, x, X)
 I64      int64 (d, o, x, X) or uint64 (o, u, x, X)
 I        intptr (d, o, x, X) or uintptr (o, u, x, X)
-h        CharA (c, s)
-l        CharW (c, s)
+h        char_a (c, s)
+l        char_w (c, s)
 
 types:
 d        Signed decimal integer.
@@ -110,8 +172,8 @@ g        Signed values are displayed in f or e format, whichever is more compact
          Trailing zeros are truncated, and the decimal point appears only if one or more digits follow it.
 G        Identical to the g format, except that E, rather than e, introduces the exponent.
 p        Displays the argument as an address in hexadecimal digits.
-c        Character. hc for CharA character, lc for CharW character, c for CharS character.
-s        String. hs for CharA string, ls for CharW string, s for CharS string.
+c        Character. hc for char_a character, lc for char_w character, c for char_s character.
+s        String. hs for char_a string, ls for char_w string, s for char_s string.
 %        "%%", print a '%'.
 */
 
@@ -129,8 +191,8 @@ modifier:
 h        short (d, o, x) or ushort (u)
 l        double (e, f, g)
 I64      int64 (d, o, u, x)
-h        CharA (c, s, [])
-l        CharW (c, s, [])
+h        char_a (c, s, [])
+l        char_w (c, s, [])
 
 type:
 d         (int*)      Decimal integer.
@@ -138,19 +200,65 @@ o         (int*)      Octal integer.
 u         (uint*)     Unsigned decimal integer.
 x         (int*)      Hexadecimal integer.
 e, f, g   (float*)    Floating-point value.
-s                     String (CharS). Use [width] option without including the terminator.
-c                     Character (CharS). Use [width] option without including the terminator.
+s                     String (char_s). Use [width] option without including the terminator.
+c                     Character (char_s). Use [width] option without including the terminator.
 [ccc]                 Matches a nonempty sequence of characters from the specified set of accepted characters. Use [width] option without including the terminator.
 or [c-c]
 or [^ccc]             NOT in a set of characters.
 %                     "%%", Matches a literal '%'.
 */
+
+// string_to_value
+//   return value: the pointer to the next character. If this value is equal to szString, no conversion is performed.
+inline char_a* string_to_value(const char_a* szString, float& v, bool& bOK) throw()
+{
+	char_a* pN = NULL;
+	errno = 0;
+	v = ::strtof(szString, &pN);  // v may be +-HUGE_VALF
+	bOK = (errno == 0);  // ERANGE
+	return pN;
+}
+inline char_a* string_to_value(const char_a* szString, double& v, bool& bOK) throw()
+{
+	char_a* pN = NULL;
+	errno = 0;
+	v = ::strtod(szString, &pN);  // v may be +-HUGE_VAL
+	bOK = (errno == 0);  // ERANGE
+	return pN;
+}
+
+inline char_a* string_to_value(const char_a* szString, int iBase, int& v, bool& bOK) throw()
+{
+	char_a* pN = NULL;
+	errno = 0;
+	v = (int)::strtol(szString, &pN, iBase);  // v may be LONG_MAX or LONG_MIN (may be 64bits under linux)
+	bOK = (errno == 0);  // ERANGE or EINVAL
+	return pN;
+}
+inline char_a* string_to_value(const char_a* szString, int iBase, uint& v, bool& bOK) throw()
+{
+	char_a* pN = NULL;
+	errno = 0;
+	v = (uint)::strtoul(szString, &pN, iBase);  // v may be ULONG_MAX (may be 64bits under linux)
+	bOK = (errno == 0);  // ERANGE or EINVAL
+	return pN;
+}
+
+//------------------------------------------------------------------------------
+// path types
+
+BEGIN_ENUM(path_types)
+	ENUM_VALUE_ENTRY(None, 0)
+	ENUM_VALUE_ENTRY(Relative, 1)
+	ENUM_VALUE_ENTRY(Absolute, 2)
+END_ENUM()
+
 //------------------------------------------------------------------------------
 //OS
 
-#if defined(OS_WINDOWS)
+#if defined(GKC_OS_WINDOWS)
 	#include "Windows/str_api.h"
-#elif defined(OS_LINUX)
+#elif defined(GKC_OS_LINUX)
 	#include "Linux/str_api.h"
 #else
 	#error Error OS type!
@@ -161,11 +269,21 @@ or [^ccc]             NOT in a set of characters.
 
 // compare_string
 
-inline int compare_string(const CharA* s1, const CharA* s2) throw()
+inline int compare_string(const char_a* s1, const char_a* s2) throw()
 {
 	return ::strcmp(s1, s2);
 }
 
 //------------------------------------------------------------------------------
+// path
+
+inline void get_path_extension_start(char_a& ch) throw()
+{
+	ch = '.';
+}
+inline bool check_path_extension_start(const char_a& ch) throw()
+{
+	return ch == '.';
+}
 
 ////////////////////////////////////////////////////////////////////////////////

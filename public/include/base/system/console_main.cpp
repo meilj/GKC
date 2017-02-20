@@ -16,11 +16,13 @@ This file contains main function for console application.
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "_sys_cmdline.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 
-#if defined(OS_WINDOWS)
+#if defined(GKC_OS_WINDOWS)
 	#include "Windows/console_main.cpp"
-#elif defined(OS_LINUX)
+#elif defined(GKC_OS_LINUX)
 	#include "Linux/console_main.cpp"
 #else
 	#error Error OS type!

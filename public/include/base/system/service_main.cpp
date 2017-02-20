@@ -16,11 +16,13 @@ This file contains main function for Service program.
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "_sys_cmdline.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 
-#if defined(OS_WINDOWS)
+#if defined(GKC_OS_WINDOWS)
 	#include "Windows/service_main.cpp"
-#elif defined(OS_LINUX)
+#elif defined(GKC_OS_LINUX)
 	#include "Linux/service_main.cpp"
 #else
 	#error Error OS type!

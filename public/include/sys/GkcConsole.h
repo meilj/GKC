@@ -19,12 +19,8 @@ This file contains console classes.
 #define __GKC_CONSOLE_H__
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __GKC_CONST_H__
-	#error GkcConsole.h requires GkcConst.h to be included first.
-#endif
-
-#ifndef __GKC_STRING_H__
-	#error GkcConsole.h requires GkcString.h to be included first.
+#ifndef __GKC_SYS_H__
+	#error GkcConsole.h requires GkcSys.h to be included first.
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -33,9 +29,9 @@ namespace GKC {
 
 // classes
 
-// Console
+// ConsoleHelper
 
-class Console
+class ConsoleHelper
 {
 public:
 //output
@@ -48,7 +44,7 @@ public:
 	//write string
 	static void Write(const ConstStringS& str) throw()
 	{
-		print_string(ConstHelper::GetInternalPointer(str));
+		print_string(ConstArrayHelper::GetInternalPointer(str));
 	}
 	template <uintptr t_size>
 	static void Write(const FixedStringT<CharS, t_size>& str) throw()
@@ -57,7 +53,7 @@ public:
 	}
 	static void Write(const StringS& str) throw()
 	{
-		print_string(SharedArrayHelper::GetInternalPointer(str));
+		print_string(ShareArrayHelper::GetInternalPointer(str));
 	}
 
 	//write with LF
@@ -84,29 +80,41 @@ public:
 	{
 		stdout_attr_helper::get_attr().SetAttribute(uAttrs);
 	}
+	//restore
+	static void RestoreTextAttribute() throw()
+	{
+		stdout_attr_helper::get_attr().Restore();
+	}
 
 //input
 	template <uintptr t_size>
 	static void Read(FixedStringT<CharS, t_size>& str) throw()
 	{
-		assert( t_size > 0 );
-		str.SetLength(0);
-		CharS szFormat[256];
-		szFormat[0] = 0;
-		int ret = value_to_string(szFormat, sizeof(szFormat) / sizeof(CharS), _S("%%%Ius"), t_size - 1);
-		if( ret >= 0 )
-			szFormat[ret] = 0;
-		//no check
-		scan_format(szFormat, FixedArrayHelper::GetInternalPointer(str));
+		read_with_pre_format_string<t_size>(str, _S("%%%Ius"));
 	}
 	template <uintptr t_size>
 	static void ReadLine(FixedStringT<CharS, t_size>& str) throw()
 	{
-		assert( t_size > 0 );
+		read_with_pre_format_string<t_size>(str, _S("%%%Iu[^\n]"));
+	}
+
+	//print const string array
+	static void PrintConstStringArray(const DECLARE_CONST_STRING_ARRAY_TYPE(CharS)& arr) throw()
+	{
+		auto iter(arr.GetBegin());
+		for( ; iter != arr.GetEnd(); iter.MoveNext() ) {
+			WriteLine(ConstStringS(iter.get_Value()));
+		}
+	}
+
+private:
+	template <uintptr t_size>
+	static void read_with_pre_format_string(FixedStringT<CharS, t_size>& str, const CharS* szPreFormatString) throw()
+	{
 		str.SetLength(0);
 		CharS szFormat[256];
 		szFormat[0] = 0;
-		int ret = value_to_string(szFormat, sizeof(szFormat) / sizeof(CharS), _S("%%%Iu[^\n]"), t_size - 1);
+		int ret = value_to_string(szFormat, sizeof(szFormat) / sizeof(CharS), szPreFormatString, t_size - 1);
 		if( ret >= 0 )
 			szFormat[ret] = 0;
 		//no check

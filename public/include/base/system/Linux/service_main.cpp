@@ -16,13 +16,11 @@ This file contains main function for Service program.
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "_cmdline.h"
-
 ////////////////////////////////////////////////////////////////////////////////
 
 // tools
 
-int g_ExitFlag = 0;
+volatile int g_ServiceExitFlag = 0;
 
 //signal callbacks
 static
@@ -30,7 +28,7 @@ void _sig_term(int signo)
 {
 	//catched signal sent by kill(1) command
 	if( signo == SIGTERM ) {
-		g_ExitFlag = 1;
+		g_ServiceExitFlag = 1;
 	} //end if
 }
 
@@ -46,12 +44,12 @@ int main(int argc, char *argv[], char *envp[])
 	::signal(SIGHUP, SIG_IGN);
 	//fork
 	pid_t pid = ::fork();
-	if( pid < 0 ) {
+	if( pid == -1 ) {
 		::perror("cannot fork!\n");
 		exit(EXIT_FAILURE);
 		//return -1;
 	}
-	if( pid > 0 ) {
+	if( pid != 0 ) {
 		exit(EXIT_SUCCESS);  //parent process
 		//return 0;
 	}
@@ -59,12 +57,12 @@ int main(int argc, char *argv[], char *envp[])
 //in child
 	//setsid
 	pid = ::setsid();
-	if( pid < 0 ) {
+	if( pid == (pid_t)-1 ) {
 		::perror("cannot initialize session!\n");
 		return -1;
 	}
 	//cwd
-	if( ::chdir("/") < 0 ) {
+	if( ::chdir("/") == -1 ) {
 		::perror("cannot change dir!\n");
 		return -1;
 	}
@@ -81,7 +79,7 @@ int main(int argc, char *argv[], char *envp[])
 	::signal(SIGCHLD, SIG_IGN);  //no check
 
 //command
-	GKC::ConstArray<GKC::ConstStringS> args;
+	const_array<const_string_s> args;
 	_auto_mem spArgs;
 	//convert
 	try {
@@ -96,12 +94,12 @@ int main(int argc, char *argv[], char *envp[])
 	::signal(SIGTERM, _sig_term);  //no check
 //loop
 	report_service_log(GKC_SERVICE_NAME, SERVICE_LOG_SUCCESS, _S("Start Service!"));
-	ServiceMainLoop sml;
+	service_main_loop sml;
 	if( !sml.Prepare(args) ) {
 		report_service_log(GKC_SERVICE_NAME, SERVICE_LOG_ERROR, _S("Initialize loop failed!"));
 		return -1;
 	}
-	while( !g_ExitFlag ) {
+	while( !g_ServiceExitFlag ) {
 		if( !sml.OneLoop() )
 			break;
 		thread_sleep(1);

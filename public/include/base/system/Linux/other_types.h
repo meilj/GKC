@@ -32,18 +32,45 @@ inline bool guid_equal(const guid& id1, const guid& id2) throw()
 	return ::uuid_compare(id1, id2) == 0;
 }
 
+// internal
+#pragma pack(push, 1)
+typedef struct _tag_os_guid
+{
+//native endian
+	uint    l;
+	ushort  w1;
+	ushort  w2;
+//big endian
+	byte   d[8];
+} _os_guid;
+#pragma pack(pop)
+
+//constant
+
+// in header file
+#define DECLARE_GUID(name)  \
+	extern "C" const guid* name;
+
+// in cpp file
+#define IMPLEMENT_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8)  \
+	const _os_guid _os_g_guid_##name = { (l), (w1), (w2), { (b1), (b2), (b3), (b4), (b5), (b6), (b7), (b8) } };  \
+	const guid* name = (const guid*)(uintptr)(&_os_g_guid_##name);
+
+// use
+#define USE_GUID(name)  (*(name))
+
 //------------------------------------------------------------------------------
 //character
 
-typedef char            CharA;  //ANSI or UTF8
-typedef unsigned short  CharH;  //word or UTF16
-typedef wchar_t         CharL;  //long or UTF32
+typedef char            char_a;  //ANSI or UTF8
+typedef unsigned short  char_h;  //word or UTF16
+typedef wchar_t         char_l;  //long or UTF32
 
-typedef CharA  CharS;  //system type, UTF8
+typedef char_a  char_s;  //system type, UTF8
 //for const string
 #define _S(x)  x
 
-typedef CharL  CharW;  //for wide type, L"..."
+typedef char_l  char_w;  //for wide type, L"..."
 
 //------------------------------------------------------------------------------
 //atomic
@@ -85,11 +112,14 @@ inline void* mem_move(const void* src, uintptr count, void* dest) throw()
 
 //------------------------------------------------------------------------------
 // errno
-#define CR_FROM_ERROR(err)  ((int)(0x80000000 | (err)))
-#define CR_FROM_ERRORNO()   CR_FROM_ERROR(errno)
+#define CR_FROM_ERROR(err)       ((int)(0x80000000 | (err)))
+
+#define _OS_CR_FROM_ERRORNO()    CR_FROM_ERROR(errno)
 
 //------------------------------------------------------------------------------
-//call_result
+//call result
+
+#pragma pack(push, 1)
 
 class call_result
 {
@@ -153,19 +183,29 @@ private:
 	int m_result;
 };
 
-//------------------------------------------------------------------------------
-// call_result constants
+#pragma pack(pop)
 
-#define CR_S_EOF             38
-#define CR_S_FALSE           1
-#define CR_OK                0
-#define CR_FAIL              CR_FROM_ERROR(EFAULT)
+//------------------------------------------------------------------------------
+// call result constants
+
+#define CR_S_EOF             (38)
+#define CR_S_FALSE           (1)
+#define CR_OK                (0)
+#define CR_FAIL              CR_FROM_ERROR(1000)
+#define CR_UNEXPECTED        CR_FROM_ERROR(1001)
 #define CR_OUTOFMEMORY       CR_FROM_ERROR(ENOMEM)
+#define CR_BADADDRESS        CR_FROM_ERROR(EFAULT)
 #define CR_OVERFLOW          CR_FROM_ERROR(EOVERFLOW)
 #define CR_SABAD             CR_FROM_ERROR(ELIBBAD)
 #define CR_INVALID           CR_FROM_ERROR(EINVAL)
 #define CR_NOTIMPL           CR_FROM_ERROR(ENOSYS)
 #define CR_NAMETOOLONG       CR_FROM_ERROR(ENAMETOOLONG)
+#define CR_DISKFULL          CR_FROM_ERROR(ENOSPC)
+#define CR_FDBAD             CR_FROM_ERROR(EBADF)
+#define CR_CORRUPT           CR_FROM_ERROR(EILSEQ)
+#define CR_NOACCESS          CR_FROM_ERROR(EACCES)
+#define CR_ABORT             CR_FROM_ERROR(EINTR)
+#define CR_CANCELED          CR_FROM_ERROR(ECANCELED)
 
 //------------------------------------------------------------------------------
 // Service
@@ -178,7 +218,7 @@ private:
 
 // report_service_log
 //  type: SERVICE_LOG_*
-inline void report_service_log(const CharS* szService, uint type, const CharS* szMsg) throw()
+inline void report_service_log(const char_s* szService, uint type, const char_s* szMsg) throw()
 {
 	::openlog(szService, LOG_PID | LOG_NDELAY, LOG_USER);
 	::syslog(LOG_USER | type, "%s", szMsg);

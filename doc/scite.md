@@ -11,6 +11,20 @@
 #
 -->
 
+# SciTE
+
+The official website is:
+
+```
+http://www.scintilla.org
+```
+
+Install `GTK+` under Linux:
+
+```
+sudo apt-get install gnome-core-devel
+```
+
 # Set the configuration for SciTE
 
 Edit the file `SciTEGlobal.properties`:
@@ -37,3 +51,17 @@ and add `character.set=134` for chinese input.
 1. Change the value of `font.base` and so on to `$(font.monospace)` in section PLAT_WIN.
 
 1. Change the size of font monospace to 11.
+
+# Add configurations for `WLang`
+
+Edit the file `SciTEGlobal.properties`:
+
+1. Cancel comment of `autocompleteword.automatic=1`.
+
+1. Cancel comment of `autocomplete.choose.single=1` and change value `1` to `0`.
+
+Copy the file `wlang.properties` to installed folder `$(SciteDefaultHome)` (The folder contains `SciTE.exe` file under Windows, or it is `/usr/share/scite/` typically under Linux).
+
+Copy `wlang.api` and `wlang-p.api` to folder `$(SciteDefaultHome)/api`.
+
+Use the key `ctrl+i` to pop the calltip window.

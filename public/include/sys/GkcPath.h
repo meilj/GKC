@@ -11,7 +11,7 @@
 */
 
 /*
-This file contains Path of FileSystem classes.
+This file contains Path of File System classes.
 */
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -19,8 +19,8 @@ This file contains Path of FileSystem classes.
 #define __GKC_PATH_H__
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __GKC_STRING_H__
-	#error GkcPath.h requires GkcString.h to be included first.
+#ifndef __GKC_SYS_H__
+	#error GkcPath.h requires GkcSys.h to be included first.
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -43,7 +43,98 @@ public:
 	template <typename Tchar>
 	static void ConvertPathStringToPlatform(INOUT StringT<Tchar>& str) throw()
 	{
-		cvt_path_string_to_platform(SharedArrayHelper::GetInternalPointer(str));
+		assert( !str.IsBlockNull() );
+		cvt_path_string_to_platform(ShareArrayHelper::GetInternalPointer(str));
+	}
+
+	//separator
+	template <typename Tchar>
+	static void AppendSeparator(StringT<Tchar>& str)
+	{
+		assert( !str.IsBlockNull() );
+		uintptr uLength = str.GetLength();
+		if( uLength == 0 || !check_path_separator(str.GetAt(uLength - 1).get_Value()) ) {
+			Tchar ch;
+			get_path_separator(ch);
+			StringHelper::Append(ch, str);
+		}
+	}
+	template <typename Tchar>
+	static void RemoveSeparator(StringT<Tchar>& str) throw()
+	{
+		uintptr uLength = str.GetLength();
+		if( uLength > 0 && check_path_separator(str.GetAt(uLength - 1).get_Value()) ) {
+			StringHelper::Delete(uLength - 1, 1, str);
+		}
+	}
+
+	//extension
+	template <typename Tchar>
+	static bool FindExtensionStart(IN const ConstStringT<Tchar>& str, OUT uintptr& uPos) throw()
+	{
+		uintptr uLength = str.GetCount();
+		if( uLength == 0 )
+			return false;
+		auto iterB(str.GetReverseBegin());
+		auto iter(iterB);
+		for( ; iter != str.GetReverseEnd(); iter.MoveNext() ) {
+			const Tchar& ch = iter.get_Value();
+			if( check_path_separator(ch) )
+				return false;
+			if( check_path_extension_start(ch) ) {
+				uPos = uLength + iter.CalcDelta(iterB) - 1;
+				return true;
+			}
+		}
+		return false;
+	}
+	//file part
+	template <typename Tchar>
+	static uintptr FindFilePartStart(IN const ConstStringT<Tchar>& str) throw()
+	{
+		uintptr uLength = str.GetCount();
+		if( uLength == 0 )
+			return 0;
+		auto iterB(str.GetReverseBegin());
+		auto iter(iterB);
+		for( ; iter != str.GetReverseEnd(); iter.MoveNext() ) {
+			const Tchar& ch = iter.get_Value();
+			if( check_path_separator(ch) || check_drive_separator(ch) )
+				return uLength + iter.CalcDelta(iterB);
+		}
+		return 0;
+	}
+
+	//path prefix modification
+	template <typename Tchar>
+	static void AppendCurrentPathPrefix(StringT<Tchar>& str)
+	{
+		assert( !str.IsBlockNull() );
+		uintptr uLength = str.GetLength();
+		if( uLength == 0 )
+			return ;
+		for( auto iter(str.GetBegin()); iter != str.GetEnd(); iter.MoveNext() ) {
+			const Tchar& ch = iter.get_Value();
+			if( check_path_separator(ch) || check_drive_separator(ch) )
+				return ;
+		}
+		const Tchar* sz;
+		get_current_path_prefix(sz, uLength);
+		ConstStringT<Tchar> c_strPrefix(sz, uLength);
+		StringHelper::Insert(0, c_strPrefix, str);
+	}
+	//called after ConvertPathStringToPlatform with absolute path
+	template <typename Tchar>
+	static void AppendAbsolutePathPrefix(StringT<Tchar>& str)
+	{
+		assert( !str.IsBlockNull() );
+		uintptr uLength = str.GetLength();
+		if( uLength == 0 )
+			return ;
+		const Tchar* sz;
+		get_absolute_path_prefix(sz, uLength);
+		ConstStringT<Tchar> c_strPrefix(sz, uLength);
+		StringHelper::Insert(0, c_strPrefix, str);
 	}
 };
 

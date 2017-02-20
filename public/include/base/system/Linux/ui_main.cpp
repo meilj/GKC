@@ -23,11 +23,11 @@ int main(int argc, char *argv[], char *envp[])
 //start
 	//fork
 	pid_t pid = ::fork();
-	if( pid < 0 ) {
+	if( pid == -1 ) {
 		::perror("cannot fork!\n");
 		return -1;
 	}
-	if( pid > 0 ) {
+	if( pid != 0 ) {
 		//parent process
 		return 0;
 	}
@@ -35,7 +35,7 @@ int main(int argc, char *argv[], char *envp[])
 //in child
 	//setsid
 	pid = ::setsid();
-	if( pid < 0 ) {
+	if( pid == (pid_t)-1 ) {
 		::perror("cannot initialize session!\n");
 		return -1;
 	}
@@ -45,13 +45,13 @@ int main(int argc, char *argv[], char *envp[])
 	::signal(SIGCHLD, SIG_IGN);  //no check
 
 //command
-	GKC::ConstArray<GKC::ConstStringS> args;
+	const_array<const_string_s> args;
 	_auto_mem spArgs;
 	//convert
 	_cmdline_to_strings(argc, argv, spArgs, args);  //may throw
 
 	//main
-	return ProgramEntryPoint::UIMain(args);
+	return program_entry_point::UIMain(args);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

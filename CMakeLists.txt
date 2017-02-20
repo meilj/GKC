@@ -9,11 +9,12 @@
 #   yxxinyuan@zju.edu.cn
 #
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.7)
 INCLUDE("common.cmk")
 PROJECT(GKC)
 ADD_SUBDIRECTORY(RT RT)
 ADD_SUBDIRECTORY(Compiler/wlc Compiler/wlc)
+ADD_SUBDIRECTORY(tools tools)
 ADD_SUBDIRECTORY(test test)
 
 #pack

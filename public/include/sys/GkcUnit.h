@@ -19,8 +19,6 @@ Author: Lijuan Mei
 /*
 These are the basic macros you will use for creating tests and doing setup/teardown.
 
-The base/GkcBase.cpp must be included in cpp file.
-
 Example:
 
 In unit test cpp file:
@@ -138,7 +136,7 @@ public:
 //methods
 	void AddUnitTest(const ConstStringS& strName, _UnitTestFunc pFunc)
 	{
-		StringS strM(StringUtilHelper::MakeEmptyString<CharS>(MemoryHelper::GetCrtMemoryManager()));
+		StringS strM(StringHelper::MakeEmptyString<CharS>(MemoryHelper::GetCrtMemoryManager()));
 		StringUtilHelper::MakeString(strName, strM);
 		m_map.Insert(strM, pFunc);
 	}
@@ -165,11 +163,9 @@ public:
 	}
 
 	//find
-	_UnitTestFunc Find(const ConstStringS& strName) const
+	_UnitTestFunc Find(const StringS& strName) const throw()
 	{
-		StringS strM(StringUtilHelper::MakeEmptyString<CharS>(MemoryHelper::GetCrtMemoryManager()));
-		StringUtilHelper::MakeString(strName, strM);
-		auto iter = m_map.Find(strM);
+		auto iter(m_map.Find(strName));
 		if( iter == m_map.GetEnd() )
 			return NULL;
 		return iter.get_Value().get_Second();
@@ -186,23 +182,11 @@ class _UnitTestMapHelper
 public:
 	//get map
 	BEGIN_NOINLINE
-	static _UnitTestMap*& GetUnitTestMap()
+	static _UnitTestMap& GetUnitTestMap() throw()
 	END_NOINLINE
 	{
-		static _UnitTestMap* l_unit_test_map = NULL;
-
-		if( l_unit_test_map == NULL )
-			l_unit_test_map = new _UnitTestMap;
+		static _UnitTestMap l_unit_test_map;
 		return l_unit_test_map;
-	}
-	//free
-	static void FreeUnitTestMap()
-	{
-		_UnitTestMap*& map = GetUnitTestMap();
-		if( map != NULL ) {
-			delete map;
-			map = NULL;
-		}
 	}
 };
 
@@ -214,9 +198,9 @@ public:
 	_UnitTestReg(const CharS* szName, _UnitTestFunc pFunc)
 	{
 		ConstStringS strName;
-		ConstHelper::SetInternalPointer(szName, calc_string_length(szName), strName);
-		_UnitTestMap* pMap = _UnitTestMapHelper::GetUnitTestMap();
-		pMap->AddUnitTest(strName, pFunc);
+		ConstArrayHelper::SetInternalPointer(szName, calc_string_length(szName), strName);
+		_UnitTestMap& map = _UnitTestMapHelper::GetUnitTestMap();
+		map.AddUnitTest(strName, pFunc);
 	}
 };
 
@@ -225,60 +209,66 @@ public:
 class _UnitTestMainHelper
 {
 public:
-	static int MainProcess(const GKC::ConstArray<GKC::ConstStringS>& args, _UnitTestMessageBuffer& buffer)
+	static int MainProcess(const ConstArray<ConstStringS>& args, _UnitTestMessageBuffer& buffer)
 	{
 		//const strings
-		DECLARE_LOCAL_CONST_STRING(CharS, l_szSep1, l_iSep1Len, _S("=========================="))
-		DECLARE_LOCAL_CONST_STRING(CharS, l_szSep2, l_iSep2Len, _S("**************************"))
-		DECLARE_LOCAL_CONST_STRING(CharS, l_szSep3, l_iSep3Len, _S("--------------------------"))
-		DECLARE_LOCAL_CONST_STRING(CharS, l_szColon, l_iColonLen, _S(":"))
-		DECLARE_LOCAL_CONST_STRING(CharS, l_szNoTest, l_iNoTestLen, _S("ERROR: NO SUCH TEST!"))
+		DECLARE_LOCAL_CONST_STRING(CharS, l_szSep1, l_uSep1Len, _S("=========================="))
+		DECLARE_LOCAL_CONST_STRING(CharS, l_szSep2, l_uSep2Len, _S("**************************"))
+		DECLARE_LOCAL_CONST_STRING(CharS, l_szSep3, l_uSep3Len, _S("--------------------------"))
+		DECLARE_LOCAL_CONST_STRING(CharS, l_szColon, l_uColonLen, _S(":"))
+		DECLARE_LOCAL_CONST_STRING(CharS, l_szNoTest, l_uNoTestLen, _S("ERROR: NO SUCH TEST!"))
 
 		//map
-		_UnitTestMap* pMap = _UnitTestMapHelper::GetUnitTestMap();
+		_UnitTestMap& map = _UnitTestMapHelper::GetUnitTestMap();
 		uintptr uTotal  = 0;
 		uintptr uFailed = 0;
 
 		if( args.GetCount() <= 1 ) {
 			//all tests
 			_UnitTestMap::ItemInfo info;
-			bool bContinue = pMap->EnumFirst(info);
+			bool bContinue = map.EnumFirst(info);
 			while( bContinue ) {
 				//current test
-				Console::WriteLine(ConstStringS(l_szSep1, l_iSep1Len));
-				Console::Write(info.strName);
-				Console::WriteLine(ConstStringS(l_szColon, l_iColonLen));
+				ConsoleHelper::WriteLine(ConstStringS(l_szSep1, l_uSep1Len));
+				ConsoleHelper::Write(info.strName);
+				ConsoleHelper::WriteLine(ConstStringS(l_szColon, l_uColonLen));
 				if( !info.pFunc(buffer) ) {
-					Console::WriteLine(buffer);
+					ConsoleHelper::WriteLine(buffer);
 					uFailed ++;
 				}
-				Console::WriteLine(ConstStringS(l_szSep2, l_iSep2Len));
+				ConsoleHelper::WriteLine(ConstStringS(l_szSep2, l_uSep2Len));
 				uTotal ++;
-				bContinue = pMap->EnumNext(info);
+				bContinue = map.EnumNext(info);
+				//sleep
+				thread_sleep(1);
 			}
 		}
 		else {
+			StringS strM(StringHelper::MakeEmptyString<CharS>(MemoryHelper::GetCrtMemoryManager()));
 			//specified tests
-			auto iter = args.GetBegin();
+			auto iter(args.GetBegin());
 			assert( iter != args.GetEnd() );
 			iter.MoveNext();  //from 1
 			for( ; iter != args.GetEnd(); iter.MoveNext() ) {
 				//current test
-				Console::WriteLine(ConstStringS(l_szSep1, l_iSep1Len));
-				Console::Write(iter.get_Value());
-				Console::WriteLine(ConstStringS(l_szColon, l_iColonLen));
-				_UnitTestFunc pFunc = pMap->Find(iter.get_Value());
+				ConsoleHelper::WriteLine(ConstStringS(l_szSep1, l_uSep1Len));
+				ConsoleHelper::Write(iter.get_Value());
+				ConsoleHelper::WriteLine(ConstStringS(l_szColon, l_uColonLen));
+				//find
+				StringUtilHelper::MakeString(iter.get_Value(), strM);
+				_UnitTestFunc pFunc = map.Find(strM);
 				if( pFunc == NULL ) {
-					Console::WriteLine(ConstStringS(l_szNoTest, l_iNoTestLen));
+					ConsoleHelper::WriteLine(ConstStringS(l_szNoTest, l_uNoTestLen));
 					uFailed ++;
 				}
 				else {
+					//run test
 					if( !pFunc(buffer) ) {
-						Console::WriteLine(buffer);
+						ConsoleHelper::WriteLine(buffer);
 						uFailed ++;
 					}
 				}
-				Console::WriteLine(ConstStringS(l_szSep2, l_iSep2Len));
+				ConsoleHelper::WriteLine(ConstStringS(l_szSep2, l_uSep2Len));
 				uTotal ++;
 			}
 		} //end if
@@ -290,21 +280,18 @@ public:
 									_S("Total (%Iu), Failed (%Iu)"), uTotal, uFailed);
 			if( ret >= 0 )
 				buffer.SetLength(ret);
-			Console::WriteLine(ConstStringS(l_szSep3, l_iSep3Len));
-			Console::WriteLine(buffer);
-		}
-
-		//free map
-		_UnitTestMapHelper::FreeUnitTestMap();
+			ConsoleHelper::WriteLine(ConstStringS(l_szSep3, l_uSep3Len));
+			ConsoleHelper::WriteLine(buffer);
+		} //end block
 
 		return 0;
 	}
 };
 
 // for main function
-#define UNIT_TEST_MAIN_PROCESS(args)         \
-	GKC::_UnitTestMessageBuffer  g_buffer;   \
-	GKC::_UnitTestMainHelper::MainProcess(args, g_buffer)
+#define UNIT_TEST_MAIN_PROCESS(args)  \
+	_UnitTestMessageBuffer g_buffer;  \
+	_UnitTestMainHelper::MainProcess(args, g_buffer)
 
 // in cpp file
 
@@ -316,9 +303,9 @@ public:
 	static void FormatErrorByCallResult(const CallResult& cr, const CharS* szFileName, int iLineNumber, bool bFixture, bool bError, _UnitTestMessageBuffer& buffer) throw()
 	{
 		//const strings
-		DECLARE_LOCAL_CONST_STRING(CharS, l_szFixture, l_iFixtureLen, _S("[fixture]"))
-		DECLARE_LOCAL_CONST_STRING(CharS, l_szError, l_iErrorLen, _S("error:"))
-		DECLARE_LOCAL_CONST_STRING(CharS, l_szCorrect, l_iCorrectLen, _S("correct:"))
+		DECLARE_LOCAL_CONST_STRING(CharS, l_szFixture, l_uFixtureLen, _S("[fixture]"))
+		DECLARE_LOCAL_CONST_STRING(CharS, l_szError, l_uErrorLen, _S("error:"))
+		DECLARE_LOCAL_CONST_STRING(CharS, l_szCorrect, l_uCorrectLen, _S("correct:"))
 		//format
 		_UnitTestMessageBuffer bufTemp;
 		int ret = value_to_string(FixedArrayHelper::GetInternalPointer(bufTemp), _UnitTestMessageBuffer::c_size,
@@ -328,13 +315,13 @@ public:
 		buffer.SetLength(0);
 		StringUtilHelper::Append(bufTemp, buffer);
 		if( bFixture ) {
-			StringUtilHelper::Append(ConstStringS(l_szFixture, l_iFixtureLen), buffer);
+			StringUtilHelper::Append(ConstStringS(l_szFixture, l_uFixtureLen), buffer);
 			StringUtilHelper::Append(ConstStringS(_S(" "), 1), buffer);
 		}
 		if( bError )
-			StringUtilHelper::Append(ConstStringS(l_szError, l_iErrorLen), buffer);
+			StringUtilHelper::Append(ConstStringS(l_szError, l_uErrorLen), buffer);
 		else
-			StringUtilHelper::Append(ConstStringS(l_szCorrect, l_iCorrectLen), buffer);
+			StringUtilHelper::Append(ConstStringS(l_szCorrect, l_uCorrectLen), buffer);
 		result_to_string(cr, FixedArrayHelper::GetInternalPointer(bufTemp), _UnitTestMessageBuffer::c_size);
 		bufTemp.RecalcLength();
 		StringUtilHelper::Append(bufTemp, buffer);
@@ -355,10 +342,10 @@ public:
 
 // define Fixture
 #define GKC_TEST_FIXTURE(x)  \
-	class GKC_TEST_FIXTURE_##x { public: \
+	class GKC_TEST_FIXTURE_##x { public:  \
 	void Setup(); void Teardown();  \
 	public:  \
-	GKC_TEST_FIXTURE_##x() { Setup(); }      \
+	GKC_TEST_FIXTURE_##x() { Setup(); }  \
 	~GKC_TEST_FIXTURE_##x() { Teardown(); }  \
 	};
 
@@ -371,16 +358,16 @@ public:
 // define error message
 #define _GKC_TEST_FORMAT_ERROR(...)  \
 	{ _gkc_utm_buffer.SetLength(0);  \
-	int __ret = value_to_string(GKC::FixedArrayHelper::GetInternalPointer(_gkc_utm_buffer), GKC::_UnitTestMessageBuffer::c_size, __VA_ARGS__);  \
+	int __ret = value_to_string(FixedArrayHelper::GetInternalPointer(_gkc_utm_buffer), _UnitTestMessageBuffer::c_size, __VA_ARGS__);  \
 	if( __ret >= 0 ) _gkc_utm_buffer.SetLength(__ret); }
 
 // define function
 #define _GKC_BEGIN_TEST_FUNC(x)  \
-	bool _GKC_TEST_##x(GKC::_UnitTestMessageBuffer& _gkc_utm_buffer);	        \
-	GKC::_UnitTestReg g_gkc_test_##x(_S(_GKC_TEST_TO_STRING(x)), &_GKC_TEST_##x);	\
-	bool _GKC_TEST_##x(GKC::_UnitTestMessageBuffer& _gkc_utm_buffer) {
+	bool _GKC_TEST_##x(_UnitTestMessageBuffer& _gkc_utm_buffer);  \
+	_UnitTestReg g_gkc_test_##x(_S(_GKC_TEST_TO_STRING(x)), &_GKC_TEST_##x);  \
+	bool _GKC_TEST_##x(_UnitTestMessageBuffer& _gkc_utm_buffer) {
 
-#define _GKC_END_TEST_FUNC    return true; }
+#define _GKC_END_TEST_FUNC  return true; }
 
 // define fixture block
 //   Teardown, i.e., the destructor of the "fixture object", may throw exceptions.
@@ -388,9 +375,9 @@ public:
 #define _GKC_BEGIN_FIXTURE_BLOCK(fixtureName)  \
 	try { _GKC_TEST_FIXTURE_##fixtureName __fixture_##fixtureName;
 
-#define _GKC_END_FIXTURE_BLOCK    \
-	} catch(GKC::Exception& e) {  \
-		GKC::_UnitTestBodyHelper::FormatErrorByCallResult(e.GetResult(), __SFILE__, __LINE__, true, true, _gkc_utm_buffer);  \
+#define _GKC_END_FIXTURE_BLOCK  \
+	} catch(Exception& e) {  \
+		_UnitTestBodyHelper::FormatErrorByCallResult(e.GetResult(), __SFILE__, __LINE__, true, true, _gkc_utm_buffer);  \
 		return false; }  \
 	catch(...) {  \
 		_GKC_TEST_FORMAT_ERROR(_S("%s(%d) Other exception thrown in fixture."), __SFILE__, __LINE__);  \
@@ -401,11 +388,11 @@ public:
 #define GKC_BEGIN_TEST_BLOCK  try
 
 #define GKC_END_TEST_BLOCK  \
-	catch(GKC::_UnitTestAssertException& e) {  \
-		_GKC_TEST_FORMAT_ERROR(_S("%s"), GKC::FixedArrayHelper::GetInternalPointer(e.GetMessageBuffer()));  \
-		return false; }    \
-	catch(GKC::Exception& e) {  \
-		GKC::_UnitTestBodyHelper::FormatErrorByCallResult(e.GetResult(), __SFILE__, __LINE__, false, true, _gkc_utm_buffer);  \
+	catch(_UnitTestAssertException& e) {  \
+		_GKC_TEST_FORMAT_ERROR(_S("%s"), FixedArrayHelper::GetInternalPointer(e.GetMessageBuffer()));  \
+		return false; }  \
+	catch(Exception& e) {  \
+		_UnitTestBodyHelper::FormatErrorByCallResult(e.GetResult(), __SFILE__, __LINE__, false, true, _gkc_utm_buffer);  \
 		return false; }  \
 	catch(...) {  \
 		_GKC_TEST_FORMAT_ERROR(_S("%s(%d) Other exception thrown in block."), __SFILE__, __LINE__);  \
@@ -421,20 +408,20 @@ public:
 // GKC_TEST_ASSERT_TRUE
 
 #define GKC_TEST_ASSERT_TRUE(expression)  \
-	GKC::_UnitTestBodyHelper::IsTrue(((expression) ? true : false), __SFILE__, __LINE__)
+	_UnitTestBodyHelper::IsTrue(((expression) ? true : false), __SFILE__, __LINE__)
 
-// define Exception Test (The GKC_ASSERT_TRUE should not be called in this body)
+// define Exception Test (The GKC_TEST_ASSERT_TRUE should not be called in this body)
 
-#define GKC_BEGIN_TEST_EXCEPTION  { bool __bException = false; GKC::CallResult __cr;  try
+#define GKC_BEGIN_TEST_EXCEPTION  { bool __bException = false; CallResult __cr;  try
 
 #define GKC_END_TEST_EXCEPTION  \
-	catch(GKC::Exception& e) {  \
+	catch(Exception& e) {  \
 		__bException = true;  __cr = e.GetResult(); }  \
 	catch(...) {  \
 		__bException = true;  __cr.SetResult(0); }  \
 	if( __bException ) {  \
-		GKC::_UnitTestBodyHelper::FormatErrorByCallResult(__cr, __SFILE__, __LINE__, false, false, _gkc_utm_buffer);  \
-		GKC::Console::WriteLine(_gkc_utm_buffer); }  \
+		_UnitTestBodyHelper::FormatErrorByCallResult(__cr, __SFILE__, __LINE__, false, false, _gkc_utm_buffer);  \
+		ConsoleHelper::WriteLine(_gkc_utm_buffer); }  \
 	else { GKC_TEST_ASSERT_TRUE(false); } }
 
 ////////////////////////////////////////////////////////////////////////////////
