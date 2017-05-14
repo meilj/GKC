@@ -1,5 +1,5 @@
 ﻿/*
-** Copyright (c) 2015, Xin YUAN, courses of Zhejiang University
+** Copyright (c) 2017, Xin YUAN, courses of Zhejiang University
 ** All rights reserved.
 **
 ** This program is free software; you can redistribute it and/or
@@ -11,30 +11,22 @@
 */
 
 /*
-This file contains a process function.
+This file contains functions.
 */
 
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef __MDC_PROCESS_FILES_H__
-#define __MDC_PROCESS_FILES_H__
+#ifndef __PROCESS_PROJECT_FILE_H__
+#define __PROCESS_PROJECT_FILE_H__
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 namespace GKC {
 ////////////////////////////////////////////////////////////////////////////////
 
-//process
+// process project file
 
-inline bool ProcessFiles(const StringS& strSrc, const StringS& strDest)
+inline bool _Process_Project_File(const StringS& strSrc, const StringS& strDest)
 {
-	StringS strCurrentPath(StringHelper::MakeEmptyString<CharS>(MemoryHelper::GetCrtMemoryManager()));
-	StringS strFile(StringHelper::MakeEmptyString<CharS>(MemoryHelper::GetCrtMemoryManager()));
-
-	List<StringS> stack(MemoryHelper::GetCrtMemoryManager());
-	while( stack.GetCount() > 0 ) {
-
-	} //end while
-
 	return true;
 }
 
