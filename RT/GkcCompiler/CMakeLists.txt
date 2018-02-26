@@ -33,7 +33,8 @@ SET(SRC_LIST "src/Main.cpp" "src/Public.cpp" "src/Action.cpp" "src/Analyzer.cpp"
 	"src/ldf/LexAnalyzer.cpp" "src/ldf/GraAnalyzer.cpp"
 	"src/analyzer/LexerTables.cpp" "src/analyzer/LexerAnalyzer.cpp" "src/analyzer/GrammarTables.cpp" "src/analyzer/GrammarAnalyzer.cpp"
 	"src/analyzer/BasicSymbolData.cpp" "src/analyzer/BasicSymbolData_Factory.cpp"
-	"src/meta/CplMetaData.cpp")
+	"src/meta/CplMetaData.cpp"
+	"src/meta/CplMetaDataPositionSymbolData.cpp" "src/meta/CplMetaDataPositionSymbolData_Factory.cpp")
 ADD_LIBRARY(GkcCompiler SHARED ${SRC_PCH_LIST} ${SRC_LIST})
 SET_PCH(GkcCompiler "shared" "PreComp.h" ${SRC_PCH_LIST} ${SRC_LIST})
 SET_TARGET_SUBSYSTEM("Background")
@@ -43,11 +44,11 @@ SET_TARGET_PROPERTIES(GkcCompiler PROPERTIES OUTPUT_NAME "GkcCompiler"
 TARGET_LINK_LIBRARIES(GkcCompiler GkcSys ${STRING_LINK_EXTRA_LIBS})
 
 INSTALL(TARGETS GkcCompiler
-	RUNTIME DESTINATION public/assemblies COMPONENT runtime
-	LIBRARY DESTINATION public/assemblies COMPONENT runtime
-	ARCHIVE DESTINATION public/lib COMPONENT development)
+	RUNTIME DESTINATION core/assemblies COMPONENT runtime
+	LIBRARY DESTINATION core/assemblies COMPONENT runtime
+	ARCHIVE DESTINATION development/lib COMPONENT development)
 
 INSTALL(DIRECTORY "${PROJECT_SOURCE_DIR}/RT/GkcCompiler/public/"
-	DESTINATION public/include/compiler COMPONENT development)
+	DESTINATION development/include/compiler COMPONENT development)
 
 #end

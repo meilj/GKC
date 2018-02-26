@@ -1,5 +1,5 @@
 ﻿/*
-** Copyright (c) 2016, Xin YUAN, courses of Zhejiang University
+** Copyright (c) 2017, Xin YUAN, courses of Zhejiang University
 ** All rights reserved.
 **
 ** This program is free software; you can redistribute it and/or
@@ -11,25 +11,25 @@
 */
 
 /*
-This file contains global variables for WLANG position symbol data component.
+This file contains the string of file called wmark.lex,
+i.e., the lexical definition of WMARK.
 */
 
 ////////////////////////////////////////////////////////////////////////////////
-
-#include "PreComp.h"
-
-#include "wlang/action/WlangPositionSymbolData.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 namespace GKC {
 ////////////////////////////////////////////////////////////////////////////////
 
-// WlangPositionSymbolData
+// g_wmark_lex
 
-BEGIN_COM_TYPECAST(WlangPositionSymbolData)
-	COM_TYPECAST_ENTRY(IGrammarSymbolData, _GrammarSymbolDataBase)
-	COM_TYPECAST_ENTRY(_ICplMetaDataPositionSymbolDataUtility, _CplMetaDataPositionSymbolDataBase)
-END_COM_TYPECAST()
+BEGIN_STATIC_CONST_STRING(g_wmark_lex)
+	STATIC_CONST_STRING_ENTRY(
+"\xEF\xBB\xBF"
+"%%" "\r\n"
+"TK_COMMENT_START <!\\-\\-" "\r\n"
+	)
+END_STATIC_CONST_STRING(g_wmark_lex)
 
 ////////////////////////////////////////////////////////////////////////////////
 }

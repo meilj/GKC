@@ -79,10 +79,8 @@ public:
 	void Close() throw()
 	{
 		if( IsValid() ) {
-#ifdef DEBUG
-			int res =
-#endif
-			::close(m_fd);
+			int res = ::close(m_fd);
+			res;
 			assert( res == 0 );
 			m_fd = -1;
 		}
@@ -134,6 +132,105 @@ protected:
 private:
 	io_handle(const io_handle&) throw();
 	io_handle& operator=(const io_handle&) throw();
+};
+
+//------------------------------------------------------------------------------
+// File System
+
+// file_searcher
+
+class file_searcher
+{
+public:
+	file_searcher() throw() : m_uLength(0)
+	{
+	}
+	~file_searcher() throw()
+	{
+	}
+
+	void Close() throw()
+	{
+		m_fs.Close();
+		m_uLength = 0;
+	}
+
+	bool IsValid() const throw()
+	{
+		return m_fs.IsValid();
+	}
+
+// Operations
+
+	//strName: It can be a file name, or a directory without unnecessary trailing separator,
+	//         or a directory with format '.../*'.
+	bool Find(const const_string_s& strName) throw()
+	{
+		bool bRet = m_fs.Find(const_array_helper::GetInternalPointer(strName));
+		if( bRet )
+			m_uLength = calc_string_length(m_fs.GetFileName());
+		return bRet;
+	}
+	bool FindNext() throw()
+	{
+		bool bRet = m_fs.FindNext();
+		if( bRet )
+			m_uLength = calc_string_length(m_fs.GetFileName());
+		return bRet;
+	}
+
+// Attributes
+
+	int64 GetFileSize() const throw()
+	{
+		return m_fs.GetFileSize();
+	}
+	const_string_s GetFileName() const throw()
+	{
+		return const_string_s(m_fs.GetFileName(), m_uLength);
+	}
+	void GetCreationTime(system_time& tm) const throw()
+	{
+		timespec_to_system_time(&(m_fs.GetCreationTime()), tm);
+	}
+	void GetAccessTime(system_time& tm) const throw()
+	{
+		timespec_to_system_time(&(m_fs.GetAccessTime()), tm);
+	}
+	void GetModifyTime(system_time& tm) const throw()
+	{
+		timespec_to_system_time(&(m_fs.GetModifyTime()), tm);
+	}
+	//It must be called after checking whether the file is a directory.
+	bool IsDots() const throw()
+	{
+		return m_fs.IsDots();
+	}
+	bool IsDirectory() const throw()
+	{
+		return m_fs.IsDirectory();
+	}
+
+private:
+	static void timespec_to_system_time(const struct timespec* pTS, system_time& tm) throw()
+	{
+		struct tm tmz;
+		struct tm* ptm;
+		ptm = ::gmtime_r(pTS, &tmz);
+		assert( ptm != NULL );
+		_os_tm_to_system_time(&tmz, tm);
+		tm.uMilliseconds = (ushort)(pTS->tv_nsec / 1000000);
+	}
+
+private:
+	_os_file_searcher m_fs;
+	//for file name
+	uintptr m_uLength;
+
+private:
+	//noncopyable
+	file_searcher(const file_searcher&) throw();
+	file_searcher& operator=(const file_searcher&) throw();
 };
 
 //------------------------------------------------------------------------------
@@ -207,10 +304,8 @@ public:
 	void Unlock() throw()
 	{
 		assert( m_bInitialized );
-#ifdef DEBUG
-		int res =
-#endif
-		::sem_post(&m_sem);
+		int res = ::sem_post(&m_sem);
+		res;
 		assert( res == 0 );
 	}
 	bool TryLock() throw()
@@ -238,10 +333,8 @@ public:
 	void Term() throw()
 	{
 		if( m_bInitialized ) {
-#ifdef DEBUG
-			int res =
-#endif
-			::sem_destroy(&m_sem);
+			int res = ::sem_destroy(&m_sem);
+			res;
 			assert( res == 0 );
 			m_bInitialized = false;
 		}
@@ -280,10 +373,8 @@ public:
 	void Unlock() throw()
 	{
 		assert( m_psem != NULL );
-#ifdef DEBUG
-		int res =
-#endif
-		::sem_post(m_psem);
+		int res = ::sem_post(m_psem);
+		res;
 		assert( res == 0 );
 	}
 	bool TryLock() throw()
@@ -340,10 +431,8 @@ public:
 	void Term() throw()
 	{
 		if( m_psem != NULL ) {
-#ifdef DEBUG
-			int res =
-#endif
-			::sem_close(m_psem);
+			int res = ::sem_close(m_psem);
+			res;
 			assert( res == 0 );
 			m_psem = NULL;
 			assert( m_szName != NULL );
@@ -532,10 +621,8 @@ public:
 	void Term() throw()
 	{
 		if( m_bInitialized ) {
-#ifdef DEBUG
-			int res =
-#endif
-			::pthread_cond_destroy(&m_cv);
+			int res = ::pthread_cond_destroy(&m_cv);
+			res;
 			assert( res == 0 );
 			m_bInitialized = false;
 		}
@@ -569,37 +656,29 @@ public:
 	void LockShared() throw()
 	{
 		assert( m_bInitialized );
-#ifdef DEBUG
-		int res =
-#endif
-		::pthread_rwlock_rdlock(&m_rw);
+		int res = ::pthread_rwlock_rdlock(&m_rw);
+		res;
 		assert( res == 0 );
 	}
 	void LockExclusive() throw()
 	{
 		assert( m_bInitialized );
-#ifdef DEBUG
-		int res =
-#endif
-		::pthread_rwlock_wrlock(&m_rw);
+		int res = ::pthread_rwlock_wrlock(&m_rw);
+		res;
 		assert( res == 0 );
 	}
 	void UnlockShared() throw()
 	{
 		assert( m_bInitialized );
-#ifdef DEBUG
-		int res =
-#endif
-		::pthread_rwlock_unlock(&m_rw);
+		int res = ::pthread_rwlock_unlock(&m_rw);
+		res;
 		assert( res == 0 );
 	}
 	void UnlockExclusive() throw()
 	{
 		assert( m_bInitialized );
-#ifdef DEBUG
-		int res =
-#endif
-		::pthread_rwlock_unlock(&m_rw);
+		int res = ::pthread_rwlock_unlock(&m_rw);
+		res;
 		assert( res == 0 );
 	}
 	bool TryLockShared() throw()
@@ -616,20 +695,16 @@ public:
 	void Init() throw()
 	{
 		assert( !m_bInitialized );
-#ifdef DEBUG
-		int res =
-#endif
-		::pthread_rwlock_init(&m_rw, NULL);
+		int res = ::pthread_rwlock_init(&m_rw, NULL);
+		res;
 		assert( res == 0 );
 		m_bInitialized = true;
 	}
 	void Term() throw()
 	{
 		if( m_bInitialized ) {
-#ifdef DEBUG
-			int res =
-#endif
-			::pthread_rwlock_destroy(&m_rw);
+			int res = ::pthread_rwlock_destroy(&m_rw);
+			res;
 			assert( res == 0 );
 			m_bInitialized = false;
 		}

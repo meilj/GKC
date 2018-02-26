@@ -1,5 +1,5 @@
 ﻿/*
-** Copyright (c) 2016, Xin YUAN, courses of Zhejiang University
+** Copyright (c) 2017, Xin YUAN, courses of Zhejiang University
 ** All rights reserved.
 **
 ** This program is free software; you can redistribute it and/or
@@ -11,38 +11,24 @@
 */
 
 /*
-This file contains component class of WLANG position symbol data.
+This file contains functions.
 */
 
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef __WLANG_POSITION_SYMBOL_DATA_H__
-#define __WLANG_POSITION_SYMBOL_DATA_H__
+#ifndef __PROCESS_PROJECT_FILE_H__
+#define __PROCESS_PROJECT_FILE_H__
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 namespace GKC {
 ////////////////////////////////////////////////////////////////////////////////
 
-// WlangPositionSymbolData
+// process project file
 
-class WlangPositionSymbolData : public _GrammarSymbolDataBase,
-								public _CplMetaDataPositionSymbolDataBase
+inline bool _Process_Project_File(const StringS& strSrc, const StringS& strDest)
 {
-public:
-	WlangPositionSymbolData() throw()
-	{
-	}
-	~WlangPositionSymbolData() throw()
-	{
-	}
-
-private:
-	//noncopyable
-	WlangPositionSymbolData(const WlangPositionSymbolData&) throw();
-	WlangPositionSymbolData& operator=(const WlangPositionSymbolData&) throw();
-};
-
-DECLARE_COM_TYPECAST(WlangPositionSymbolData)
+	return true;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 }
